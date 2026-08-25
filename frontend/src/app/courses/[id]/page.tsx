@@ -40,6 +40,8 @@ export default function CourseDetailsPage() {
   const [enrolling, setEnrolling] = useState(false);
   const [localEnrolled, setLocalEnrolled] = useState(false);
   const [allProgress, setAllProgress] = useState<any[]>([]);
+  const [totalQuizzes, setTotalQuizzes] = useState(0);
+  const [takenQuizzes, setTakenQuizzes] = useState(0);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -93,6 +95,21 @@ export default function CourseDetailsPage() {
             if (progRes.ok) {
               const progData = await progRes.json();
               setAllProgress(progData.data || []);
+            }
+            
+            // Fetch quizzes for this course
+            const quizzesRes = await fetch(`http://localhost:1337/api/quizzes?filters[course][documentId][$eq]=${params.id}`, { headers });
+            if (quizzesRes.ok) {
+               const qData = await quizzesRes.json();
+               setTotalQuizzes(qData.data?.length || 0);
+               
+               // Fetch quiz attempts for this user and this course
+               const attemptsRes = await fetch(`http://localhost:1337/api/quiz-attempts?filters[student][id][$eq]=${currentUserId}&filters[quiz][course][documentId][$eq]=${params.id}&populate=quiz`, { headers });
+               if (attemptsRes.ok) {
+                  const attData = await attemptsRes.json();
+                  const uniqueQuizIds = new Set(attData.data?.map((a: any) => a.quiz?.documentId).filter(Boolean));
+                  setTakenQuizzes(uniqueQuizIds.size);
+               }
             }
           } catch (err) {
             console.error('Failed to verify status', err);
@@ -200,13 +217,35 @@ export default function CourseDetailsPage() {
                   Enrollment Disabled for Staff
                 </button>
               ) : localEnrolled ? (
-                <button 
-                  disabled
-                  className="px-8 py-3 bg-white/10 border border-white/20 text-gray-400 text-sm font-bold rounded-lg flex items-center gap-2 cursor-not-allowed"
-                >
-                  Enrolled 
-                  <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                </button>
+                <div className="flex flex-col items-center gap-2">
+                  <button 
+                    disabled
+                    className="w-full px-8 py-3 bg-white/10 border border-white/20 text-gray-400 text-sm font-bold rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
+                  >
+                    Enrolled 
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                  </button>
+                  {totalQuizzes > 0 && (
+                    <div className="flex flex-col items-center w-full mt-2">
+                      <Link 
+                        href={`/courses/${course.documentId}/quizzes`}
+                        className="w-full px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
+                      >
+                        {takenQuizzes >= totalQuizzes ? 'Retake Quiz' : 'Take a Quiz'}
+                      </Link>
+                      {takenQuizzes >= totalQuizzes ? (
+                        <div className="mt-2 text-xs font-semibold text-emerald-400 flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                          {totalQuizzes}/{totalQuizzes}
+                        </div>
+                      ) : (
+                        <div className="mt-2 text-xs font-semibold text-gray-400">
+                          {takenQuizzes}/{totalQuizzes} Quizzes Taken
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <button 
                   onClick={handleEnroll} 

@@ -725,6 +725,9 @@ export interface ApiQuizAttemptQuizAttempt extends Struct.CollectionTypeSchema {
     publishedAt: Schema.Attribute.DateTime;
     quiz: Schema.Attribute.Relation<'manyToOne', 'api::quiz.quiz'>;
     score: Schema.Attribute.Decimal;
+    startedAt: Schema.Attribute.DateTime;
+    status: Schema.Attribute.Enumeration<['in_progress', 'submitted']> &
+      Schema.Attribute.DefaultTo<'in_progress'>;
     student: Schema.Attribute.Relation<
       'manyToOne',
       'plugin::users-permissions.user'
@@ -734,6 +737,8 @@ export interface ApiQuizAttemptQuizAttempt extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    violationScore: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    violationsLog: Schema.Attribute.JSON;
   };
 }
 

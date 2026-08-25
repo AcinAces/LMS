@@ -122,10 +122,10 @@ export default function AdminQuizzesPage() {
         title="Quizzes"
         columns={columns}
         data={quizzes}
-        onAdd={() => { setIsBuilderOpen(true); }}
+        onAdd={() => { setEditingData(null); setIsBuilderOpen(true); }}
         onEdit={(row) => { 
-          setEditingData({ ...row, course: row.course?.documentId }); 
-          setIsModalOpen(true); 
+          setEditingData(row); 
+          setIsBuilderOpen(true); 
         }}
         onDelete={handleDelete}
         addLabel="New Quiz"
@@ -136,14 +136,6 @@ export default function AdminQuizzesPage() {
         onClose={() => setIsBuilderOpen(false)}
         onSuccess={() => { setIsBuilderOpen(false); fetchQuizzesAndCourses(); }}
         courses={courses}
-      />
-
-      <DynamicFormModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleSubmit}
-        title="Edit Quiz"
-        fields={fields}
         initialData={editingData}
       />
     </div>

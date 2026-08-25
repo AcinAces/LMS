@@ -1,42 +1,121 @@
-﻿'use client';
+'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface QuizBuilderModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   courses: any[];
+  initialData?: any;
 }
 
-export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses }: QuizBuilderModalProps) {
+export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses, initialData }: QuizBuilderModalProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
 
+  // Step 1 Data
   const [quizLength, setQuizLength] = useState(5);
   const [selectedCourse, setSelectedCourse] = useState('');
   const [timeLimit, setTimeLimit] = useState(15);
   const [quizTitle, setQuizTitle] = useState('');
   const [quizDescription, setQuizDescription] = useState('');
 
+  // Step 2 Data
   const [questions, setQuestions] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setStep(1);
+      if (initialData?.documentId) {
+        setFetching(true);
+        const jwt = localStorage.getItem('jwt');
+        fetch('http://localhost:1337/api/quizzes/' + initialData.documentId + '?populate[questions][populate][0]=options', {
+          headers: { 'Authorization': 'Bearer ' + jwt }
+        })
+        .then(res => res.json())
+        .then(data => {
+          const quiz = data.data;
+          setQuizTitle(quiz.quizTitle || '');
+          setQuizDescription(quiz.quizDescription || '');
+          setTimeLimit(quiz.timeLimit || 15);
+          // if course was passed in initialData from the table:
+          setSelectedCourse(initialData.course?.documentId || quiz.course?.documentId || '');
+          
+          if (quiz.questions && quiz.questions.length > 0) {
+            setQuizLength(quiz.questions.length);
+            const mappedQs = quiz.questions.map((q: any) => ({
+              documentId: q.documentId,
+              questionText: q.questionText,
+              options: q.options?.length === 4 ? q.options.map((o: any) => ({
+                documentId: o.documentId,
+                optionText: o.optionText,
+                isCorrect: o.isCorrect
+              })) : [
+                { optionText: '', isCorrect: true },
+                { optionText: '', isCorrect: false },
+                { optionText: '', isCorrect: false },
+                { optionText: '', isCorrect: false }
+              ]
+            }));
+            setQuestions(mappedQs);
+          } else {
+            setQuizLength(5);
+            setQuestions(Array.from({ length: 5 }).map(() => ({
+              questionText: '',
+              options: [
+                { optionText: '', isCorrect: true },
+                { optionText: '', isCorrect: false },
+                { optionText: '', isCorrect: false },
+                { optionText: '', isCorrect: false }
+              ]
+            })));
+          }
+        })
+        .finally(() => setFetching(false));
+      } else {
+        setQuizTitle('');
+        setQuizDescription('');
+        setTimeLimit(15);
+        setSelectedCourse('');
+        setQuizLength(5);
+        setQuestions(Array.from({ length: 5 }).map(() => ({
+          questionText: '',
+          options: [
+            { optionText: '', isCorrect: true },
+            { optionText: '', isCorrect: false },
+            { optionText: '', isCorrect: false },
+            { optionText: '', isCorrect: false }
+          ]
+        })));
+      }
+    }
+  }, [initialData, isOpen]);
 
   const handleNext = () => {
     if (!selectedCourse || !quizTitle) {
-      alert('Please fill in course and title.');
+      alert("Please fill in course and title.");
       return;
     }
     
-    const initialQuestions = Array.from({ length: quizLength }).map(() => ({
-      questionText: '',
-      options: [
-        { optionText: '', isCorrect: true },
-        { optionText: '', isCorrect: false },
-        { optionText: '', isCorrect: false },
-        { optionText: '', isCorrect: false }
-      ]
-    }));
-    setQuestions(initialQuestions);
+    let updatedQs = [...questions];
+    if (quizLength > updatedQs.length) {
+      const diff = quizLength - updatedQs.length;
+      const newQs = Array.from({ length: diff }).map(() => ({
+        questionText: '',
+        options: [
+          { optionText: '', isCorrect: true },
+          { optionText: '', isCorrect: false },
+          { optionText: '', isCorrect: false },
+          { optionText: '', isCorrect: false }
+        ]
+      }));
+      updatedQs = [...updatedQs, ...newQs];
+    } else if (quizLength < updatedQs.length) {
+      updatedQs = updatedQs.slice(0, quizLength);
+    }
+    setQuestions(updatedQs);
     setStep(2);
   };
 
@@ -61,14 +140,15 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses }
   };
 
   const handleSubmit = async () => {
+    // Validate
     for (let i = 0; i < questions.length; i++) {
-      if (!questions[i].questionText) {
-        alert(Question "$" + {i + 1} is empty.);
+      if (!questions[i].questionText || questions[i].questionText.trim() === '') {
+        alert('Question ' + (i + 1) + ' is empty.');
         return;
       }
       for (let j = 0; j < 4; j++) {
-        if (!questions[i].options[j].optionText) {
-          alert(Option "$" + {j + 1} in Question "$" + {i + 1} is empty.);
+        if (!questions[i].options[j].optionText || questions[i].options[j].optionText.trim() === '') {
+          alert('Option ' + (j + 1) + ' in Question ' + (i + 1) + ' is empty.');
           return;
         }
       }
@@ -78,12 +158,19 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses }
     try {
       const jwt = localStorage.getItem('jwt');
       const headers = { 
-        'Authorization': "Bearer $" + {jwt},
+        'Authorization': 'Bearer ' + jwt,
         'Content-Type': 'application/json'
       };
 
-      const quizRes = await fetch('http://localhost:1337/api/quizzes', {
-        method: 'POST',
+      const isEditing = !!initialData?.documentId;
+      const quizMethod = isEditing ? 'PUT' : 'POST';
+      const quizUrl = isEditing 
+        ? 'http://localhost:1337/api/quizzes/' + initialData.documentId
+        : 'http://localhost:1337/api/quizzes';
+
+      // 1. Create/Update Quiz
+      const quizRes = await fetch(quizUrl, {
+        method: quizMethod,
         headers,
         body: JSON.stringify({
           data: {
@@ -94,13 +181,19 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses }
           }
         })
       });
-      if (!quizRes.ok) throw new Error('Failed to create quiz');
+      if (!quizRes.ok) throw new Error("Failed to save quiz");
       const quizData = await quizRes.json();
-      const quizId = quizData.data.documentId;
+      const quizId = isEditing ? initialData.documentId : quizData.data.documentId;
 
-      for (const q of questions) {
-        const qRes = await fetch('http://localhost:1337/api/quiz-questions', {
-          method: 'POST',
+      // 2. Create/Update Questions & Options
+      await Promise.all(questions.map(async (q) => {
+        const qMethod = q.documentId ? 'PUT' : 'POST';
+        const qUrl = q.documentId 
+          ? 'http://localhost:1337/api/quiz-questions/' + q.documentId
+          : 'http://localhost:1337/api/quiz-questions';
+
+        const qRes = await fetch(qUrl, {
+          method: qMethod,
           headers,
           body: JSON.stringify({
             data: {
@@ -109,13 +202,18 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses }
             }
           })
         });
-        if (!qRes.ok) throw new Error('Failed to create question');
-        const qData = await qRes.json();
-        const questionId = qData.data.documentId;
+        if (!qRes.ok) throw new Error("Failed to save question");
+        const qResData = await qRes.json();
+        const questionId = q.documentId ? q.documentId : qResData.data.documentId;
 
-        for (const o of q.options) {
-          await fetch('http://localhost:1337/api/mcq-options', {
-            method: 'POST',
+        await Promise.all(q.options.map((o: any) => {
+          const oMethod = o.documentId ? 'PUT' : 'POST';
+          const oUrl = o.documentId 
+            ? 'http://localhost:1337/api/mcq-options/' + o.documentId
+            : 'http://localhost:1337/api/mcq-options';
+
+          return fetch(oUrl, {
+            method: oMethod,
             headers,
             body: JSON.stringify({
               data: {
@@ -125,17 +223,22 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses }
               }
             })
           });
-        }
+        }));
+      }));
+
+      if (!isEditing) {
+        await fetch('http://localhost:1337/api/quizzes/' + quizId + '/actions/publish', {
+          method: 'POST',
+          headers
+        });
       }
 
-      setStep(1);
-      setQuizTitle('');
-      setQuizDescription('');
-      setQuestions([]);
+      alert(isEditing ? 'Quiz updated successfully!' : 'Quiz published successfully!');
+      window.location.reload();
       onSuccess();
     } catch (err) {
       console.error(err);
-      alert('Error saving quiz. Check console for details.');
+      alert("Error saving quiz. Check console for details.");
     } finally {
       setLoading(false);
     }
@@ -144,17 +247,21 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-gray-900 border border-white/10 rounded-xl w-full max-w-4xl shadow-2xl relative my-8">
-        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gray-900 sticky top-0 z-10 rounded-t-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+      <div className="bg-gray-900 border border-white/10 rounded-xl w-full max-w-4xl max-h-[90vh] shadow-2xl relative flex flex-col">
+        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gray-900 rounded-t-xl flex-shrink-0">
           <h2 className="text-xl font-bold text-white">
-            {step === 1 ? 'Step 1: Quiz Settings' : 'Step 2: Quiz Questions'}
+            {step === 1 ? (initialData?.documentId ? 'Step 1: Edit Quiz Settings' : 'Step 1: Quiz Settings') : 'Step 2: Quiz Questions'}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">&times;</button>
         </div>
 
-        <div className="p-6">
-          {step === 1 && (
+        <div className="p-6 overflow-y-auto flex-1">
+          {fetching ? (
+            <div className="flex justify-center items-center py-20">
+              <span className="w-8 h-8 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></span>
+            </div>
+          ) : step === 1 ? (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -222,13 +329,11 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses }
                   onClick={handleNext}
                   className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold"
                 >
-                  Next: Add Questions
+                  Next: Edit Questions
                 </button>
               </div>
             </div>
-          )}
-
-          {step === 2 && (
+          ) : (
             <div className="space-y-8">
               {questions.map((q, qIndex) => (
                 <div key={qIndex} className="bg-black/30 p-6 rounded-lg border border-white/5">
@@ -248,7 +353,7 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses }
                       <div key={oIndex} className="flex items-center gap-3">
                         <input 
                           type="radio" 
-                          name={correct- + qIndex}
+                          name={'correct-' + qIndex}
                           checked={opt.isCorrect}
                           onChange={() => handleCorrectOptionChange(qIndex, oIndex)}
                           className="w-5 h-5 text-emerald-500 bg-black/50 border-white/10 focus:ring-emerald-500 cursor-pointer"
@@ -258,7 +363,7 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses }
                           value={opt.optionText}
                           onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)}
                           className="flex-1 bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white"
-                          placeholder={Option  + (oIndex + 1)}
+                          placeholder={'Option ' + (oIndex + 1)}
                         />
                       </div>
                     ))}
@@ -282,7 +387,7 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses }
                   {loading ? (
                     <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                   ) : null}
-                  Publish Quiz
+                  {initialData?.documentId ? 'Update Quiz' : 'Publish Quiz'}
                 </button>
               </div>
             </div>

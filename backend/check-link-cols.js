@@ -5,7 +5,7 @@ const client = new Client({
 });
 async function run() {
   await client.connect();
-  const res = await client.query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name LIKE 'up_permissions%';");
+  const res = await client.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'up_permissions_role_lnk';");
   console.log(res.rows);
   await client.end();
 }
