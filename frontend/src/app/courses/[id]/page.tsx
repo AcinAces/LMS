@@ -165,6 +165,11 @@ export default function CourseDetailsPage() {
     return `${m}m ${s}s`;
   };
 
+  const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+  const userObj = userStr ? JSON.parse(userStr) : null;
+  const roleType = userObj?.role?.type;
+  const isStaff = roleType === 'admin' || roleType === 'content_manager' || roleType === 'instructor';
+
   return (
     <div className="relative min-h-[calc(100vh-4rem)] pt-16">
       <AnimatedBackground />
@@ -186,7 +191,15 @@ export default function CourseDetailsPage() {
           
           {!isPublic && (
             <div className="flex-shrink-0">
-              {localEnrolled ? (
+              {isStaff ? (
+                <button 
+                  disabled
+                  title="Staff cannot enroll in courses"
+                  className="px-8 py-3 bg-white/5 border border-white/10 text-gray-500 text-sm font-bold rounded-lg flex items-center gap-2 cursor-not-allowed"
+                >
+                  Enrollment Disabled for Staff
+                </button>
+              ) : localEnrolled ? (
                 <button 
                   disabled
                   className="px-8 py-3 bg-white/10 border border-white/20 text-gray-400 text-sm font-bold rounded-lg flex items-center gap-2 cursor-not-allowed"
@@ -227,7 +240,10 @@ export default function CourseDetailsPage() {
               let buttonStyle = 'bg-emerald-600 hover:bg-emerald-500 text-white';
               let timeLeftText = null;
               
-              if (progress) {
+              if (isStaff) {
+                statusText = 'View Lesson';
+                buttonStyle = 'bg-white/10 hover:bg-white/20 text-white border border-white/20';
+              } else if (progress) {
                 if (progress.completed) {
                   statusText = 'Start again';
                   buttonStyle = 'bg-white/10 hover:bg-white/20 text-white border border-white/20';
@@ -255,28 +271,30 @@ export default function CourseDetailsPage() {
                     <div>
                       <div className="flex items-center gap-3">
                         <h4 className="text-lg font-bold text-white">{lesson.title || `Lesson ${idx + 1}`}</h4>
-                        {progress?.completed && (
+                        {!isStaff && progress?.completed && (
                           <span className="text-emerald-400 flex items-center" title="Completed">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Duration: {formatTime(lesson.durationInSeconds || 0)}
-                      </p>
+                      {(!progress?.completed || isStaff) && (
+                        <p className="text-sm text-gray-500 mt-1">
+                          Duration: {formatTime(lesson.durationInSeconds || 0)}
+                        </p>
+                      )}
                     </div>
                   </div>
                   
                   {!isPublic && (
                     <div className="flex flex-col items-center gap-1.5">
                       <button 
-                        disabled={!localEnrolled}
+                        disabled={!isStaff && !localEnrolled}
                         onClick={() => router.push(`/courses/${course.documentId}/lesson/${lesson.documentId}`)}
-                        className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-colors w-full sm:w-auto ${buttonStyle} ${!localEnrolled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-colors w-full sm:w-auto ${buttonStyle} ${!isStaff && !localEnrolled ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         {statusText}
                       </button>
-                      {timeLeftText && (
+                      {timeLeftText && !isStaff && (
                         <span className="text-blue-400 text-xs font-semibold text-center w-full">
                           {timeLeftText}
                         </span>

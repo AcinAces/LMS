@@ -800,6 +800,7 @@ export interface ApiQuizQuiz extends Struct.CollectionTypeSchema {
     >;
     quizDescription: Schema.Attribute.Text;
     quizTitle: Schema.Attribute.String;
+    timeLimit: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<15>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

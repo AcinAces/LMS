@@ -1,0 +1,149 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import DataTable, { ColumnDef } from '@/components/admin/DataTable';
+import DynamicFormModal, { FormField } from '@/components/admin/DynamicFormModal';
+
+export default function AdminCoursesPage() {
+  const [courses, setCourses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingData, setEditingData] = useState<any>(null);
+
+  const fetchCourses = async () => {
+    try {
+      const jwt = localStorage.getItem('jwt');
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+      
+      const res = await fetch(`http://localhost:1337/api/courses?populate=*&filters[courseAuthor][id][$eq]=${user?.id}`, {
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      });
+      const data = await res.json();
+      setCourses(data.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  const columns: ColumnDef<any>[] = [
+    { key: 'documentId', label: 'ID', render: (row) => <span className="text-gray-500 font-mono text-xs">{row.documentId.substring(0, 8)}</span> },
+    { key: 'courseTitle', label: 'Title' },
+    { key: 'courseTag', label: 'Tag', render: (row) => (
+      <span className="px-2 py-1 bg-white/10 rounded-full text-xs">{row.courseTag || 'None'}</span>
+    )},
+    { key: 'publishedAt', label: 'Status', render: (row) => (
+      <span className={`px-2 py-1 rounded-full text-xs ${row.publishedAt ? 'bg-emerald-500/20 text-emerald-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+        {row.publishedAt ? 'Published' : 'Draft'}
+      </span>
+    )}
+  ];
+
+  const fields: FormField[] = [
+    { key: 'courseTitle', label: 'Course Title', type: 'text', required: true },
+    { key: 'courseTag', label: 'Tag (e.g. Popular, New)', type: 'text' },
+    { key: 'courseDescription', label: 'Description', type: 'textarea' },
+  ];
+
+  const handleSubmit = async (formData: any) => {
+    const jwt = localStorage.getItem('jwt');
+    const userStr = localStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    const isEditing = !!editingData?.documentId;
+    
+    const payload = {
+      data: {
+        courseTitle: formData.courseTitle,
+        courseTag: formData.courseTag,
+        courseDescription: formData.courseDescription,
+        // Enforce the author is the currently logged in instructor
+        courseAuthor: user?.id
+      }
+    };
+
+    const url = isEditing 
+      ? `http://localhost:1337/api/courses/${editingData.documentId}`
+      : `http://localhost:1337/api/courses`;
+      
+    const res = await fetch(url, {
+      method: isEditing ? 'PUT' : 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${jwt}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const resData = await res.json();
+    if (!res.ok) {
+      throw new Error(resData.error?.message || 'Failed to save course');
+    }
+    
+    // Publish automatically if it's new
+    if (!isEditing && resData.data?.documentId) {
+       await fetch(`http://localhost:1337/api/courses/${resData.data.documentId}/actions/publish`, {
+         method: 'POST',
+         headers: { 'Authorization': `Bearer ${jwt}` }
+       });
+    }
+
+    fetchCourses();
+  };
+
+  const handleDelete = async (row: any) => {
+    if (!confirm(`Are you sure you want to delete "${row.courseTitle}"?`)) return;
+    
+    const jwt = localStorage.getItem('jwt');
+    await fetch(`http://localhost:1337/api/courses/${row.documentId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${jwt}` }
+    });
+    
+    fetchCourses();
+  };
+
+  if (loading) return <div>Loading courses...</div>;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-white mb-2">Manage Courses</h1>
+        <p className="text-gray-400">Create, edit, and organize learning paths.</p>
+      </div>
+
+      <DataTable 
+        title="Courses"
+        columns={columns}
+        data={courses}
+        onAdd={() => { setEditingData({}); setIsModalOpen(true); }}
+        onEdit={(row) => { 
+          // Extract plain text from blocks if it's a rich text array
+          let desc = row.courseDescription;
+          if (Array.isArray(desc)) {
+             desc = desc.map((b: any) => b.children?.map((c: any) => c.text).join('')).join('\n');
+          }
+          setEditingData({ ...row, courseDescription: desc }); 
+          setIsModalOpen(true); 
+        }}
+        onDelete={handleDelete}
+        addLabel="New Course"
+      />
+
+      <DynamicFormModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleSubmit}
+        title={editingData?.documentId ? 'Edit Course' : 'Create Course'}
+        fields={fields}
+        initialData={editingData}
+      />
+    </div>
+  );
+}

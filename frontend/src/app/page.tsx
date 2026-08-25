@@ -22,10 +22,10 @@ export default function Home() {
             Explore Courses
           </Link>
           <Link 
-            href="/success" 
+            href="/blogs" 
             className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-lg font-semibold text-lg transition-all backdrop-blur-sm w-full sm:w-auto"
           >
-            Read Success Stories
+            Read Blogs
           </Link>
         </div>
       </div>

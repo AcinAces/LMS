@@ -9,6 +9,7 @@ interface CustomVideoPlayerProps {
   initialMaxWatched: number;
   isCompleted: boolean;
   onProgressSync: (lastWatched: number, maxWatched: number, completed: boolean) => void;
+  isStaff?: boolean;
 }
 
 export default function CustomVideoPlayer({
@@ -17,6 +18,7 @@ export default function CustomVideoPlayer({
   initialMaxWatched,
   isCompleted,
   onProgressSync,
+  isStaff = false,
 }: CustomVideoPlayerProps) {
   const [player, setPlayer] = useState<YouTubePlayer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -29,6 +31,11 @@ export default function CustomVideoPlayer({
   
   const [maxWatched, setMaxWatched] = useState(initialMaxWatched);
   const [completed, setCompleted] = useState(isCompleted);
+
+  // Keep local completed state in sync with parent prop
+  useEffect(() => {
+    setCompleted(isCompleted);
+  }, [isCompleted]);
 
   // Auto-hide controls
   const [showControls, setShowControls] = useState(true);
@@ -155,8 +162,8 @@ export default function CustomVideoPlayer({
     if (!player) return;
     const newTime = parseFloat(e.target.value);
 
-    // If not completed, prevent skipping past maxWatched
-    if (!completed && newTime > maxWatched) {
+    // If not completed and not staff, prevent skipping past maxWatched
+    if (!completed && !isStaff && newTime > maxWatched) {
       // Snap to maxWatched
       player.seekTo(maxWatched);
       setCurrentTime(maxWatched);
@@ -325,15 +332,17 @@ export default function CustomVideoPlayer({
               <option value="3">3x</option>
             </select>
 
-            {completed ? (
-              <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded flex items-center gap-1">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                COMPLETED
-              </span>
-            ) : (
-              <span className="px-2 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded">
-                IN PROGRESS
-              </span>
+            {!isStaff && (
+              completed ? (
+                <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                  COMPLETED
+                </span>
+              ) : (
+                <span className="px-2 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded">
+                  IN PROGRESS
+                </span>
+              )
             )}
 
             {/* Fullscreen Button */}

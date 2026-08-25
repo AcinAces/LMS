@@ -34,6 +34,10 @@
       "relation": "oneToMany",
       "target": "api::quiz-attempt.quiz-attempt",
       "mappedBy": "quiz"
+    },
+    "timeLimit": {
+      "type": "integer",
+      "default": 15
     }
   }
 }

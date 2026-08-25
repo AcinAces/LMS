@@ -17,12 +17,14 @@ export default function AdminQuizzesPage() {
   const fetchQuizzesAndCourses = async () => {
     try {
       const jwt = localStorage.getItem('jwt');
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
       
       const [quizzesRes, coursesRes] = await Promise.all([
-        fetch('http://localhost:1337/api/quizzes?populate=course', {
+        fetch(`http://localhost:1337/api/quizzes?populate=course&filters[course][courseAuthor][id][$eq]=${user?.id}`, {
           headers: { 'Authorization': `Bearer ${jwt}` }
         }),
-        fetch('http://localhost:1337/api/courses', {
+        fetch(`http://localhost:1337/api/courses?filters[courseAuthor][id][$eq]=${user?.id}`, {
           headers: { 'Authorization': `Bearer ${jwt}` }
         })
       ]);

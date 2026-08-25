@@ -11,7 +11,7 @@ export default function Navbar() {
   const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkSession = () => {
+    const checkSession = async () => {
       const jwt = localStorage.getItem('jwt');
       const userStr = localStorage.getItem('user');
       const timestampStr = localStorage.getItem('loginTimestamp');
@@ -29,7 +29,7 @@ export default function Navbar() {
           setUserRole(null);
           
           // Redirect if not on public pages
-          const publicRoutes = ['/', '/login', '/register', '/courses', '/success', '/blogs'];
+          const publicRoutes = ['/', '/login', '/register', '/courses', '/blogs'];
           const isPublic = publicRoutes.some(route => pathname === route || pathname?.startsWith(route + '/'));
           
           if (!isPublic && !pathname?.startsWith('/admin') && !pathname?.startsWith('/instructor') && !pathname?.startsWith('/content-manager')) {
@@ -40,24 +40,59 @@ export default function Navbar() {
             const user = JSON.parse(userStr);
             if (user && user.username) {
               setUsername(user.username);
+              // Fallback to local role until API resolves
               setUserRole(user.role?.type || null);
-              
-              // Self-healing: if logged in but no role stored, fetch it from the API
-              if (!user.role?.type && jwt) {
-                fetch('http://localhost:1337/api/users/me?populate=role', {
-                  headers: { 'Authorization': `Bearer ${jwt}` }
-                })
-                  .then(r => r.ok ? r.json() : null)
-                  .then(meData => {
-                    if (meData?.role) {
-                      const updatedUser = { ...user, role: meData.role };
-                      localStorage.setItem('user', JSON.stringify(updatedUser));
-                      setUserRole(meData.role.type);
-                    }
-                  })
-                  .catch(() => {});
-              }
             }
+            
+            // ALWAYS fetch fresh role on page change or refresh
+            try {
+              const res = await fetch('http://localhost:1337/api/users/me?populate=role', {
+                headers: { 'Authorization': `Bearer ${jwt}` }
+              });
+              
+              if (res.ok) {
+                const meData = await res.json();
+                if (meData?.role) {
+                  const currentRole = meData.role.type;
+                  const updatedUser = { ...user, role: meData.role };
+                  localStorage.setItem('user', JSON.stringify(updatedUser));
+                  setUserRole(currentRole);
+
+                  // Enforce dashboard constraints based on new role
+                  if (currentRole === 'admin') {
+                    if (pathname?.startsWith('/instructor') || pathname?.startsWith('/content-manager')) {
+                      router.push('/admin');
+                    }
+                  } else if (currentRole === 'instructor') {
+                    if (pathname?.startsWith('/admin') || pathname?.startsWith('/content-manager')) {
+                      router.push('/instructor');
+                    }
+                  } else if (currentRole === 'content_manager') {
+                    if (pathname?.startsWith('/admin') || pathname?.startsWith('/instructor')) {
+                      router.push('/content-manager');
+                    }
+                  } else {
+                    // Regular user / student
+                    if (pathname?.startsWith('/admin') || pathname?.startsWith('/instructor') || pathname?.startsWith('/content-manager')) {
+                      router.push('/');
+                    }
+                  }
+                }
+              } else {
+                // If token is invalid or user was deleted
+                if (res.status === 401 || res.status === 403) {
+                  localStorage.removeItem('jwt');
+                  localStorage.removeItem('user');
+                  localStorage.removeItem('loginTimestamp');
+                  setUsername(null);
+                  setUserRole(null);
+                  router.push('/login');
+                }
+              }
+            } catch (err) {
+              // Network error, ignore silently and rely on localstorage
+            }
+
           } catch (e) {
             setUsername(null);
             setUserRole(null);
@@ -132,17 +167,13 @@ export default function Navbar() {
           <Link href="/courses" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
             All Courses
           </Link>
-          <Link href="/success" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
-            Success Story
+          <Link href="/blogs" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            Blogs
           </Link>
         </div>
 
         {/* Right Side */}
         <div className="flex items-center space-x-6">
-          <Link href="/blogs" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
-            Blogs
-          </Link>
-          
           {username ? (
             <div className="flex items-center space-x-4">
               {userRole === 'admin' && (
@@ -154,8 +185,18 @@ export default function Navbar() {
               {userRole === 'instructor' && (
                 <Link href="/instructor" className="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">Instructor Dashboard</Link>
               )}
+              {(!userRole || (userRole !== 'admin' && userRole !== 'instructor' && userRole !== 'content_manager')) && (
+                <>
+                  <Link href="/my-courses" className="text-sm font-medium text-emerald-400 hover:text-emerald-300 transition-colors">
+                    My Courses
+                  </Link>
+                  <Link href="/track-progress" className="text-sm font-medium text-emerald-400 hover:text-emerald-300 transition-colors">
+                    Track Progress
+                  </Link>
+                </>
+              )}
               
-              <span className="text-sm font-medium text-emerald-400">
+              <span className="text-sm font-medium text-gray-400 border-l border-white/20 pl-4">
                 Hi, {username}
               </span>
               <button 
