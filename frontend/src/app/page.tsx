@@ -4,7 +4,7 @@ import StatCounters from '@/components/StatCounters';
 
 async function getFeaturedCourses() {
   try {
-    const res = await fetch('http://127.0.0.1:1337/api/courses?populate[0]=courseAuthor&populate[1]=lessons', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?populate[0]=courseAuthor&populate[1]=lessons`, {
       next: { revalidate: 60 }
     });
     if (!res.ok) return [];
@@ -18,7 +18,7 @@ async function getFeaturedCourses() {
 
 async function getSiteStats() {
   try {
-    const res = await fetch('http://127.0.0.1:1337/api/site-stats', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/site-stats`, {
       next: { revalidate: 60 }
     });
     if (!res.ok) return { studentCount: 0 };
