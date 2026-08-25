@@ -1,29 +1,41 @@
-{
-  "kind": "collectionType",
-  "collectionName": "blogs",
-  "info": {
-    "singularName": "blog",
-    "pluralName": "blogs",
-    "displayName": "Blog"
-  },
-  "options": {
-    "draftAndPublish": true
-  },
-  "pluginOptions": {},
-  "attributes": {
-    "title": {
-      "type": "string"
-    },
-    "body": {
-      "type": "richtext"
-    },
-    "imgURL": {
-      "type": "string"
-    },
-    "author": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "plugin::users-permissions.user"
-    }
-  }
+﻿{
+    "kind":  "collectionType",
+    "collectionName":  "blogs",
+    "info":  {
+                 "singularName":  "blog",
+                 "pluralName":  "blogs",
+                 "displayName":  "Blog"
+             },
+    "options":  {
+                    "draftAndPublish":  false
+                },
+    "pluginOptions":  {
+
+                      },
+    "attributes":  {
+                       "title":  {
+                                     "type":  "string"
+                                 },
+                       "body":  {
+                                    "type":  "richtext"
+                                },
+                       "imgURL":  {
+                                      "type":  "string"
+                                  },
+                       "author":  {
+                                      "type":  "relation",
+                                      "relation":  "manyToOne",
+                                      "target":  "plugin::users-permissions.user"
+                                  },
+                       "topic":  {
+                                     "type":  "string"
+                                 },
+                       "subtopic":  {
+                                        "type":  "string"
+                                    },
+                       "isPublished":  {
+                                           "default":  false,
+                                           "type":  "boolean"
+                                       }
+                   }
 }

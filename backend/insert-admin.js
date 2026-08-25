@@ -1,7 +1,8 @@
+require('dotenv').config();
 const crypto = require('crypto');
 const { Client } = require('pg');
 const client = new Client({
-  connectionString: 'postgresql://postgres:toNemZIHpFebRFLtQHGBtJqoutFpkbfC@altaria.proxy.rlwy.net:36817/railway',
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 

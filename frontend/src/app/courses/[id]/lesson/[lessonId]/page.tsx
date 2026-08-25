@@ -54,7 +54,7 @@ export default function LessonPage() {
         const headers = { 'Authorization': `Bearer ${jwt}` };
 
         // 1. Fetch the course and all its lessons
-        const courseRes = await fetch(`http://localhost:1337/api/courses/${params.id}?populate[0]=lessons`, { headers });
+        const courseRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses/${params.id}?populate[0]=lessons`, { headers });
         if (!courseRes.ok) throw new Error('Failed to fetch course');
         const courseData = await courseRes.json();
         setCourse(courseData.data);
@@ -66,7 +66,7 @@ export default function LessonPage() {
 
         // 2. Fetch the user's progress for this course's lessons (if not staff)
         if (!staff) {
-          const progRes = await fetch(`http://localhost:1337/api/lesson-progresses?populate[0]=lesson`, { headers });
+          const progRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lesson-progresses?populate[0]=lesson`, { headers });
           if (progRes.ok) {
             const progData = await progRes.json();
             setAllProgress(progData.data || []);
@@ -112,7 +112,7 @@ export default function LessonPage() {
 
     const syncToBackend = async () => {
       try {
-        await fetch('http://localhost:1337/api/lesson-progresses/sync', {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lesson-progresses/sync`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -164,7 +164,7 @@ export default function LessonPage() {
 
     const jwt = localStorage.getItem('jwt');
     if (jwt) {
-      fetch('http://localhost:1337/api/lesson-progresses/sync', {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lesson-progresses/sync`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

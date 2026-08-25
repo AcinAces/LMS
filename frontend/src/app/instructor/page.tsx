@@ -23,9 +23,9 @@ export default function InstructorDashboard() {
 
         // Instructors should only see stats for their own courses
         const [coursesRes, lessonsRes, quizzesRes] = await Promise.all([
-          fetch(`http://localhost:1337/api/courses?filters[courseAuthor][id][$eq]=${myId}&pagination[limit]=1`, { headers }),
-          fetch(`http://localhost:1337/api/lessons?filters[course][courseAuthor][id][$eq]=${myId}&pagination[limit]=1`, { headers }),
-          fetch(`http://localhost:1337/api/quizzes?filters[course][courseAuthor][id][$eq]=${myId}&pagination[limit]=1`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?filters[courseAuthor][id][$eq]=${myId}&pagination[limit]=1`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lessons?filters[course][courseAuthor][id][$eq]=${myId}&pagination[limit]=1`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quizzes?filters[course][courseAuthor][id][$eq]=${myId}&pagination[limit]=1`, { headers }),
         ]);
 
         let coursesCount = 0;

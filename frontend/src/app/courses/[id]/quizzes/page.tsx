@@ -21,7 +21,7 @@ export default function CourseQuizzesPage() {
         const headers: HeadersInit = {};
         if (jwt) headers['Authorization'] = `Bearer ${jwt}`;
 
-        const res = await fetch(`http://localhost:1337/api/courses/${courseId}?populate=quizzes`, { headers });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses/${courseId}?populate=quizzes`, { headers });
         if (res.ok) {
           const data = await res.json();
           setQuizzes(data.data.quizzes || []);

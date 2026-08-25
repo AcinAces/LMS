@@ -19,10 +19,10 @@ export default function AdminQuizzesPage() {
       const jwt = localStorage.getItem('jwt');
       
       const [quizzesRes, coursesRes] = await Promise.all([
-        fetch('http://localhost:1337/api/quizzes?populate=course', {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quizzes?populate=course`, {
           headers: { 'Authorization': `Bearer ${jwt}` }
         }),
-        fetch('http://localhost:1337/api/courses', {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses`, {
           headers: { 'Authorization': `Bearer ${jwt}` }
         })
       ]);
@@ -72,8 +72,8 @@ export default function AdminQuizzesPage() {
     };
 
     const url = isEditing 
-      ? `http://localhost:1337/api/quizzes/${editingData.documentId}`
-      : `http://localhost:1337/api/quizzes`;
+      ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quizzes/${editingData.documentId}`
+      : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quizzes`;
       
     const res = await fetch(url, {
       method: isEditing ? 'PUT' : 'POST',
@@ -88,7 +88,7 @@ export default function AdminQuizzesPage() {
     if (!res.ok) throw new Error(resData.error?.message || 'Failed to save quiz');
     
     if (!isEditing && resData.data?.documentId) {
-       await fetch(`http://localhost:1337/api/quizzes/${resData.data.documentId}/actions/publish`, {
+       await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quizzes/${resData.data.documentId}/actions/publish`, {
          method: 'POST',
          headers: { 'Authorization': `Bearer ${jwt}` }
        });
@@ -101,7 +101,7 @@ export default function AdminQuizzesPage() {
     if (!confirm(`Are you sure you want to delete quiz "${row.quizTitle}"?`)) return;
     
     const jwt = localStorage.getItem('jwt');
-    await fetch(`http://localhost:1337/api/quizzes/${row.documentId}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quizzes/${row.documentId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${jwt}` }
     });

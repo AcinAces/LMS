@@ -20,11 +20,11 @@ export default function AdminDashboard() {
         const headers = { 'Authorization': `Bearer ${jwt}` };
 
         const [usersRes, coursesRes, lessonsRes, quizzesRes, blogsRes] = await Promise.all([
-          fetch('http://localhost:1337/api/users', { headers }),
-          fetch('http://localhost:1337/api/courses?pagination[limit]=1', { headers }),
-          fetch('http://localhost:1337/api/lessons?pagination[limit]=1', { headers }),
-          fetch('http://localhost:1337/api/quizzes?pagination[limit]=1', { headers }),
-          fetch('http://localhost:1337/api/blogs?pagination[limit]=1', { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?pagination[limit]=1`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lessons?pagination[limit]=1`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quizzes?pagination[limit]=1`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/blogs?pagination[limit]=1`, { headers }),
         ]);
 
         let usersCount = 0;

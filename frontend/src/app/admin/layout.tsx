@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -11,25 +11,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     const verifySecurely = async () => {
       const jwt = localStorage.getItem('jwt');
-      
       if (!jwt) {
         router.push('/login');
         return;
       }
-      
       try {
-        // ALWAYS verify with the backend for secure routes to prevent UI spoofing via localStorage manipulation
-        const res = await fetch('http://localhost:1337/api/users/me?populate=role', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/me?populate=role`, {
           headers: { 'Authorization': `Bearer ${jwt}` }
         });
-        
-        if (!res.ok) {
-          throw new Error('Unauthorized');
-        }
+        if (!res.ok) throw new Error('Unauthorized');
         
         const meData = await res.json();
-        
-        // Update local storage with fresh accurate data
         const userStr = localStorage.getItem('user');
         if (userStr && meData?.role) {
            const user = JSON.parse(userStr);
@@ -40,20 +32,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           router.push('/');
           return;
         }
-        
         setLoading(false);
       } catch (e) {
-        // If token is invalid or verification fails, kick them out
         localStorage.removeItem('jwt');
         localStorage.removeItem('user');
         router.push('/login');
       }
     };
-    
     verifySecurely();
   }, [router]);
 
-  if (loading) return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Loading...</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+    </div>
+  );
 
   const links = [
     { href: '/admin', label: 'Dashboard', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
@@ -66,27 +59,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gray-900 flex text-white">
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-950 flex text-slate-100">
       {/* Sidebar */}
-      <aside className="w-64 bg-black/50 border-r border-white/10 flex flex-col">
-        <div className="p-6">
-          <h2 className="text-xl font-bold text-emerald-400">Admin Panel</h2>
+      <aside className="w-72 bg-slate-900/50 backdrop-blur-xl border-r border-white/5 flex flex-col">
+        <div className="p-8">
+          <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-500 tracking-tight">Admin Panel</h2>
         </div>
-        <nav className="flex-1 px-4 space-y-2">
+        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
           {links.map((link) => {
             const isActive = pathname === link.href;
             return (
               <Link 
                 key={link.href} 
                 href={link.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                  isActive ? 'bg-emerald-600 text-white' : 'hover:bg-white/5 text-gray-300'
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 ${
+                  isActive 
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_-3px_rgba(16,185,129,0.15)]' 
+                    : 'hover:bg-white/5 text-slate-400 hover:text-slate-200 border border-transparent'
                 }`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={link.icon} />
                 </svg>
-                <span className="font-medium text-sm">{link.label}</span>
+                <span className="font-semibold text-sm">{link.label}</span>
               </Link>
             );
           })}
@@ -94,7 +89,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 overflow-y-auto p-10 animate-fade-in-up">
         {children}
       </main>
     </div>

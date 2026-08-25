@@ -19,5 +19,14 @@ export default {
     } catch (err) {
       return ctx.internalServerError('Something went wrong');
     }
+  },
+
+  async getSiteStats(ctx: any) {
+    try {
+      const studentCount = await strapi.db.query('plugin::users-permissions.user').count();
+      return ctx.send({ studentCount });
+    } catch (err) {
+      return ctx.internalServerError('Something went wrong');
+    }
   }
 };

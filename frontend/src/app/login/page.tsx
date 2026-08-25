@@ -43,7 +43,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:1337/api/auth/local', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/auth/local`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: email, password }),
@@ -59,7 +59,7 @@ export default function LoginPage() {
       }
 
       // Fetch user's role
-      const meRes = await fetch('http://localhost:1337/api/users/me?populate=role', {
+      const meRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/me?populate=role`, {
         headers: {
           'Authorization': `Bearer ${data.jwt}`
         }

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -22,7 +22,7 @@ export default function InstructorLayout({
       }
       
       try {
-        const res = await fetch('http://localhost:1337/api/users/me?populate=role', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/me?populate=role`, {
           headers: { 'Authorization': `Bearer ${jwt}` }
         });
         
@@ -54,7 +54,7 @@ export default function InstructorLayout({
     verifySecurely();
   }, [router]);
 
-  if (loading) return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Loading...</div>;
+  if (loading) return <div className="min-h-screen bg-slate-950 text-slate-100 text-white flex items-center justify-center">Loading...</div>;
 
   const navItems = [
     { name: 'Dashboard', href: '/instructor', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -65,12 +65,12 @@ export default function InstructorLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-gray-900 flex">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-white/10 bg-black/50 hidden md:block">
+      <aside className="w-72 border-r border-white/10 bg-black/50 hidden md:block">
         <div className="h-full flex flex-col">
-          <div className="p-6 border-b border-white/10">
-            <h2 className="text-xl font-bold text-white tracking-tight">Instructor<span className="text-emerald-500">Panel</span></h2>
+          <div className="p-10 animate-fade-in-up border-b border-white/10">
+            <h2 className="text-2xl font-extrabold text-white tracking-tight">Instructor<span className="text-emerald-500">Panel</span></h2>
           </div>
           <nav className="flex-1 p-4 space-y-1">
             {navItems.map((item) => {
@@ -81,7 +81,7 @@ export default function InstructorLayout({
                   href={item.href}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                     isActive 
-                      ? 'bg-emerald-500/10 text-emerald-400 font-medium' 
+                      ? 'bg-emerald-500/10 text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-500 tracking-tight font-medium' 
                       : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
                   }`}
                 >
@@ -98,10 +98,11 @@ export default function InstructorLayout({
 
       {/* Main Content */}
       <main className="flex-1 min-w-0 overflow-auto">
-        <div className="p-8">
+        <div className="p-10 animate-fade-in-up">
           {children}
         </div>
       </main>
     </div>
   );
 }
+

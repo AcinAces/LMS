@@ -7,6 +7,14 @@ export default {
       config: {
         auth: false,
       },
+    },
+    {
+      method: 'GET',
+      path: '/site-stats',
+      handler: 'utility.getSiteStats',
+      config: {
+        auth: false,
+      },
     }
   ],
 };

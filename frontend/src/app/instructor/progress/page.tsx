@@ -13,7 +13,7 @@ export default function AdminProgressPage() {
       const userStr = localStorage.getItem('user');
       const user = userStr ? JSON.parse(userStr) : null;
       
-      const res = await fetch(`http://localhost:1337/api/enrollments?populate=course,student,lesson_progresses&filters[course][courseAuthor][id][$eq]=${user?.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/enrollments?populate=course,student,lesson_progresses&filters[course][courseAuthor][id][$eq]=${user?.id}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       });
       

@@ -17,7 +17,7 @@ export default function AdminCoursesPage() {
       const userStr = localStorage.getItem('user');
       const user = userStr ? JSON.parse(userStr) : null;
       
-      const res = await fetch(`http://localhost:1337/api/courses?populate=*&filters[courseAuthor][id][$eq]=${user?.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?populate=*&filters[courseAuthor][id][$eq]=${user?.id}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       });
       const data = await res.json();
@@ -69,8 +69,8 @@ export default function AdminCoursesPage() {
     };
 
     const url = isEditing 
-      ? `http://localhost:1337/api/courses/${editingData.documentId}`
-      : `http://localhost:1337/api/courses`;
+      ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses/${editingData.documentId}`
+      : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses`;
       
     const res = await fetch(url, {
       method: isEditing ? 'PUT' : 'POST',
@@ -88,7 +88,7 @@ export default function AdminCoursesPage() {
     
     // Publish automatically if it's new
     if (!isEditing && resData.data?.documentId) {
-       await fetch(`http://localhost:1337/api/courses/${resData.data.documentId}/actions/publish`, {
+       await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses/${resData.data.documentId}/actions/publish`, {
          method: 'POST',
          headers: { 'Authorization': `Bearer ${jwt}` }
        });
@@ -101,7 +101,7 @@ export default function AdminCoursesPage() {
     if (!confirm(`Are you sure you want to delete "${row.courseTitle}"?`)) return;
     
     const jwt = localStorage.getItem('jwt');
-    await fetch(`http://localhost:1337/api/courses/${row.documentId}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses/${row.documentId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${jwt}` }
     });

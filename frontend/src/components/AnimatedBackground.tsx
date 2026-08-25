@@ -3,10 +3,26 @@
 import React, { useEffect, useRef } from 'react';
 
 const SYNTAX_SNIPPETS = [
+  // JS/TS
   'const', 'let', '=>', '{}', '[]', '<Component />', 'function()', 'return',
   'import { useState }', 'useEffect(() => {}, [])', 'console.log()', 'await', 
   'async', 'class', 'interface', 'type', 'try', 'catch', 'export default',
-  '<div>', '</div>', 'props', 'state', 'map()', 'filter()', 'reduce()'
+  'props', 'state', 'map()', 'filter()', 'reduce()', 'Promise.all()', 'setTimeout()',
+  
+  // HTML/CSS
+  '<div>', '</div>', '<h1>', '/>', '</>', 'display: flex;', 'margin: 0;', 
+  'color: #fff;', 'grid-template-columns:', 'box-sizing: border-box;',
+  
+  // Python
+  'def __init__(self):', 'import pandas as pd', 'print()', "if __name__ == '__main__':",
+  'lambda x: x', '@decorator', 'yield', 'self.', 'dict()', 'list()',
+  
+  // Java/C++/C#
+  'public static void main', 'System.out.println', 'std::cout', '#include <iostream>',
+  'virtual void', 'std::vector', 'List<String>', 'public class', 'private final',
+  
+  // SQL/Bash
+  'SELECT * FROM', 'LEFT JOIN', 'WHERE id =', 'GROUP BY', 'npm run dev', 'git commit -m'
 ];
 
 class Particle {
@@ -16,55 +32,69 @@ class Particle {
   size: number;
   speedX: number;
   speedY: number;
+  baseSpeedX: number;
+  baseSpeedY: number;
   opacity: number;
-  baseOpacity: number;
-  scattered: boolean;
 
   constructor(canvasWidth: number, canvasHeight: number) {
     this.x = Math.random() * canvasWidth;
     this.y = Math.random() * canvasHeight;
     this.text = SYNTAX_SNIPPETS[Math.floor(Math.random() * SYNTAX_SNIPPETS.length)];
-    this.size = Math.random() * 14 + 10; // 10px to 24px
-    this.speedX = (Math.random() - 0.5) * 0.5;
-    this.speedY = (Math.random() - 0.5) * 0.5 - 0.2; // slight upward drift
-    this.baseOpacity = Math.random() * 0.4 + 0.1; // 0.1 to 0.5
-    this.opacity = this.baseOpacity;
-    this.scattered = false;
+    // Reduced size by 30% (was 10 to 22, now 7 to 15.4)
+    this.size = (Math.random() * 12 + 10) * 0.7; 
+    
+    // Slower movement
+    this.baseSpeedX = (Math.random() - 0.5) * 0.25;
+    this.baseSpeedY = (Math.random() - 0.5) * 0.25 - 0.15; // gentle upward drift
+    this.speedX = this.baseSpeedX;
+    this.speedY = this.baseSpeedY;
+    
+    this.opacity = Math.random() * 0.25 + 0.05; // 0.05 to 0.3 opacity
   }
 
   update(mouseX: number, mouseY: number) {
-    if (this.scattered) {
-      this.opacity -= 0.02;
-      this.y += this.speedY * 5;
-      this.x += this.speedX * 5;
-    } else {
-      this.x += this.speedX;
-      this.y += this.speedY;
-
-      // Wrap around
-      if (this.y < -50) this.y = window.innerHeight + 50;
-      if (this.x < -50) this.x = window.innerWidth + 50;
-      if (this.x > window.innerWidth + 50) this.x = -50;
-
-      // Mouse interaction
-      if (mouseX !== -1 && mouseY !== -1) {
-        const dx = mouseX - this.x;
-        const dy = mouseY - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+    // Mouse interaction - smooth repulse
+    if (mouseX !== -1 && mouseY !== -1) {
+      const dx = this.x - mouseX;
+      const dy = this.y - mouseY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const repelRadius = 180;
+      
+      if (distance < repelRadius) {
+        // Force is stronger the closer the mouse is
+        const force = (repelRadius - distance) / repelRadius;
         
-        if (distance < 100) {
-          this.scattered = true;
-          // Fly away from mouse
-          this.speedX = -dx * 0.05;
-          this.speedY = -dy * 0.05;
-        }
+        // Push away (10% faster, was 1.5 now 1.65)
+        const targetSpeedX = (dx / distance) * force * 1.65;
+        const targetSpeedY = (dy / distance) * force * 1.65;
+        
+        // Smoothly accelerate towards the target pushed speed (10% faster reaction, was 0.05 now 0.055)
+        this.speedX += (targetSpeedX - this.speedX) * 0.055;
+        this.speedY += (targetSpeedY - this.speedY) * 0.055;
+      } else {
+        // Smoothly decelerate back to normal speed
+        this.speedX += (this.baseSpeedX - this.speedX) * 0.03;
+        this.speedY += (this.baseSpeedY - this.speedY) * 0.03;
       }
+    } else {
+      // Smoothly decelerate back to normal speed if mouse is out
+      this.speedX += (this.baseSpeedX - this.speedX) * 0.03;
+      this.speedY += (this.baseSpeedY - this.speedY) * 0.03;
     }
+
+    this.x += this.speedX;
+    this.y += this.speedY;
+
+    // Wrap around screen seamlessly
+    if (this.y < -50) this.y = window.innerHeight + 50;
+    if (this.y > window.innerHeight + 50) this.y = -50;
+    if (this.x < -150) this.x = window.innerWidth + 150;
+    if (this.x > window.innerWidth + 150) this.x = -150;
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    if (this.opacity <= 0) return;
-    ctx.fillStyle = `rgba(100, 150, 255, ${this.opacity})`;
+    // Using the Teal primary accent color (rgb(0, 175, 182))
+    ctx.fillStyle = `rgba(0, 175, 182, ${this.opacity})`;
     ctx.font = `${this.size}px monospace`;
     ctx.fillText(this.text, this.x, this.y);
   }
@@ -89,9 +119,9 @@ export default function AnimatedBackground() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       
-      // Re-initialize particles on resize
       particles = [];
-      const numParticles = Math.floor((window.innerWidth * window.innerHeight) / 15000);
+      // Adjust density based on screen size
+      const numParticles = Math.floor((window.innerWidth * window.innerHeight) / 17000);
       for (let i = 0; i < numParticles; i++) {
         particles.push(new Particle(canvas.width, canvas.height));
       }
@@ -116,16 +146,9 @@ export default function AnimatedBackground() {
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.update(mouse.x, mouse.y);
-        p.draw(ctx);
-
-        // Respawn dead particles
-        if (p.opacity <= 0) {
-          particles[i] = new Particle(canvas.width, canvas.height);
-          // Spawn at random edge or completely random if we want continuous flow
-        }
+      for (let i = 0; i < particles.length; i++) {
+        particles[i].update(mouse.x, mouse.y);
+        particles[i].draw(ctx);
       }
 
       animationFrameId = requestAnimationFrame(render);
@@ -144,7 +167,7 @@ export default function AnimatedBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full -z-10 bg-[#0f111a]"
+      className="fixed top-0 left-0 w-full h-full -z-10 bg-slate-950"
       style={{ pointerEvents: 'none' }}
     />
   );

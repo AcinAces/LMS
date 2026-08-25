@@ -62,7 +62,7 @@ export default function CourseDetailsPage() {
         if (jwt) headers['Authorization'] = `Bearer ${jwt}`;
         
         // Populate deeply to ensure we get the student in enrollments
-        const res = await fetch(`http://localhost:1337/api/courses/${params.id}?populate[0]=courseAuthor&populate[1]=lessons`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses/${params.id}?populate[0]=courseAuthor&populate[1]=lessons`, {
           headers
         });
         
@@ -83,7 +83,7 @@ export default function CourseDetailsPage() {
         // Check enrollment — backend auto-filters to only return this user's enrollments
         if (currentUserId && jwt) {
           try {
-            const enrollRes = await fetch('http://localhost:1337/api/enrollments', { headers });
+            const enrollRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/enrollments`, { headers });
             if (enrollRes.ok) {
               const enrollData = await enrollRes.json();
               const match = enrollData.data?.some((e: any) => e.course?.documentId === params.id);
@@ -91,20 +91,20 @@ export default function CourseDetailsPage() {
             }
 
             // Also fetch all lesson progresses securely for this user
-            const progRes = await fetch('http://localhost:1337/api/lesson-progresses?populate[0]=lesson', { headers });
+            const progRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lesson-progresses?populate[0]=lesson`, { headers });
             if (progRes.ok) {
               const progData = await progRes.json();
               setAllProgress(progData.data || []);
             }
             
             // Fetch quizzes for this course
-            const quizzesRes = await fetch(`http://localhost:1337/api/quizzes?filters[course][documentId][$eq]=${params.id}`, { headers });
+            const quizzesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quizzes?filters[course][documentId][$eq]=${params.id}`, { headers });
             if (quizzesRes.ok) {
                const qData = await quizzesRes.json();
                setTotalQuizzes(qData.data?.length || 0);
                
                // Fetch quiz attempts for this user and this course
-               const attemptsRes = await fetch(`http://localhost:1337/api/quiz-attempts?filters[student][id][$eq]=${currentUserId}&filters[quiz][course][documentId][$eq]=${params.id}&populate=quiz`, { headers });
+               const attemptsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quiz-attempts?filters[student][id][$eq]=${currentUserId}&filters[quiz][course][documentId][$eq]=${params.id}&populate=quiz`, { headers });
                if (attemptsRes.ok) {
                   const attData = await attemptsRes.json();
                   const uniqueQuizIds = new Set(attData.data?.map((a: any) => a.quiz?.documentId).filter(Boolean));
@@ -131,7 +131,7 @@ export default function CourseDetailsPage() {
     try {
       setEnrolling(true);
       const jwt = localStorage.getItem('jwt');
-      const res = await fetch('http://localhost:1337/api/enrollments', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/enrollments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

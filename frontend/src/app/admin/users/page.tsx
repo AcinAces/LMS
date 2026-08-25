@@ -17,10 +17,10 @@ export default function AdminUsersPage() {
       const jwt = localStorage.getItem('jwt');
       
       const [usersRes, rolesRes] = await Promise.all([
-        fetch('http://localhost:1337/api/users?populate=role', {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users?populate=role`, {
           headers: { 'Authorization': `Bearer ${jwt}` }
         }),
-        fetch('http://localhost:1337/api/users-permissions/roles', {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users-permissions/roles`, {
           headers: { 'Authorization': `Bearer ${jwt}` }
         })
       ]);
@@ -86,8 +86,8 @@ export default function AdminUsersPage() {
     }
 
     const url = isEditing 
-      ? `http://localhost:1337/api/users/${editingData.id}`
-      : `http://localhost:1337/api/users`;
+      ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/${editingData.id}`
+      : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users`;
       
     const res = await fetch(url, {
       method: isEditing ? 'PUT' : 'POST',
@@ -110,7 +110,7 @@ export default function AdminUsersPage() {
     if (!confirm(`Are you sure you want to delete user "${row.username}"?`)) return;
     
     const jwt = localStorage.getItem('jwt');
-    await fetch(`http://localhost:1337/api/users/${row.id}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/${row.id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${jwt}` }
     });

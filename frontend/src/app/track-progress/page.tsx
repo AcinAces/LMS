@@ -40,7 +40,7 @@ export default function TrackProgressPage() {
         const headers: HeadersInit = { 'Authorization': `Bearer ${jwt}` };
 
         // Fetch all courses with their lessons to ensure we get the full mapping
-        const coursesRes = await fetch('http://localhost:1337/api/courses?populate[0]=lessons', { headers });
+        const coursesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?populate[0]=lessons`, { headers });
         if (coursesRes.status === 401) {
           router.push('/login');
           return;
@@ -50,7 +50,7 @@ export default function TrackProgressPage() {
         const allCourses = coursesData.data || [];
 
         // Fetch my enrollments
-        const enrollRes = await fetch('http://localhost:1337/api/enrollments', { headers });
+        const enrollRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/enrollments`, { headers });
         if (!enrollRes.ok) throw new Error('Failed to fetch enrollments');
         const enrollData = await enrollRes.json();
         const myEnrollments = enrollData.data || [];
@@ -60,7 +60,7 @@ export default function TrackProgressPage() {
         const myCourses = allCourses.filter((c: any) => enrolledCourseIds.has(c.documentId));
 
         // Fetch my lesson progresses
-        const progRes = await fetch('http://localhost:1337/api/lesson-progresses?populate[0]=lesson', { headers });
+        const progRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lesson-progresses?populate[0]=lesson`, { headers });
         let progresses: any[] = [];
         if (progRes.ok) {
           const progData = await progRes.json();
@@ -96,7 +96,7 @@ export default function TrackProgressPage() {
         setCourses(Array.from(courseStatsMap.values()));
 
         // Fetch quiz attempts
-        const quizRes = await fetch('http://localhost:1337/api/quiz-attempts?populate[quiz][populate][0]=course', { headers });
+        const quizRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quiz-attempts?populate[quiz][populate][0]=course`, { headers });
         if (quizRes.ok) {
           const quizData = await quizRes.json();
           const attempts = (quizData.data || []).map((a: any) => ({

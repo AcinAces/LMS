@@ -19,10 +19,10 @@ export default function AdminLessonsPage() {
       const user = userStr ? JSON.parse(userStr) : null;
       
       const [lessonsRes, coursesRes] = await Promise.all([
-        fetch(`http://localhost:1337/api/lessons?populate=course&filters[course][courseAuthor][id][$eq]=${user?.id}`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lessons?populate=course&filters[course][courseAuthor][id][$eq]=${user?.id}`, {
           headers: { 'Authorization': `Bearer ${jwt}` }
         }),
-        fetch(`http://localhost:1337/api/courses?filters[courseAuthor][id][$eq]=${user?.id}`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?filters[courseAuthor][id][$eq]=${user?.id}`, {
           headers: { 'Authorization': `Bearer ${jwt}` }
         })
       ]);
@@ -85,8 +85,8 @@ export default function AdminLessonsPage() {
     };
 
     const url = isEditing 
-      ? `http://localhost:1337/api/lessons/${editingData.documentId}`
-      : `http://localhost:1337/api/lessons`;
+      ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lessons/${editingData.documentId}`
+      : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lessons`;
       
     const res = await fetch(url, {
       method: isEditing ? 'PUT' : 'POST',
@@ -101,7 +101,7 @@ export default function AdminLessonsPage() {
     if (!res.ok) throw new Error(resData.error?.message || 'Failed to save lesson');
 
     if (!isEditing && resData.data?.documentId) {
-       await fetch(`http://localhost:1337/api/lessons/${resData.data.documentId}/actions/publish`, {
+       await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lessons/${resData.data.documentId}/actions/publish`, {
          method: 'POST',
          headers: { 'Authorization': `Bearer ${jwt}` }
        });
@@ -114,7 +114,7 @@ export default function AdminLessonsPage() {
     if (!confirm(`Are you sure you want to delete lesson "${row.title}"?`)) return;
     
     const jwt = localStorage.getItem('jwt');
-    await fetch(`http://localhost:1337/api/lessons/${row.documentId}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lessons/${row.documentId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${jwt}` }
     });

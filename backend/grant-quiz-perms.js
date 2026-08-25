@@ -1,5 +1,6 @@
+require('dotenv').config();
 ﻿const { Client } = require('pg');
-const client = new Client({ connectionString: 'postgresql://postgres:pBpxKzHHTOchgJqLthCqSjNfXYHMyBvJ@junction.proxy.rlwy.net:18174/railway' });
+const client = new Client({ connectionString: process.env.DATABASE_URL });
 async function run() {
   await client.connect();
   const roles = await client.query("SELECT id, type FROM up_roles WHERE type IN ('authenticated', 'instructor', 'content_manager', 'public');");

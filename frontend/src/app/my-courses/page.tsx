@@ -33,7 +33,7 @@ export default function MyCoursesPage() {
         const headers: HeadersInit = { 'Authorization': `Bearer ${jwt}` };
         
         // 1. Fetch all courses (or ideally we'd filter by enrollments via API, but doing this guarantees data consistency for now)
-        const coursesRes = await fetch('http://localhost:1337/api/courses?populate[0]=courseAuthor&populate[1]=lessons', {
+        const coursesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?populate[0]=courseAuthor&populate[1]=lessons`, {
           headers
         });
 
@@ -51,7 +51,7 @@ export default function MyCoursesPage() {
         const allCourses = coursesData.data || [];
 
         // 2. Fetch my enrollments
-        const enrollRes = await fetch('http://localhost:1337/api/enrollments', { headers });
+        const enrollRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/enrollments`, { headers });
         if (!enrollRes.ok) throw new Error('Failed to fetch enrollments');
         const enrollData = await enrollRes.json();
         const myEnrollments = enrollData.data || [];
@@ -79,18 +79,18 @@ export default function MyCoursesPage() {
     <div className="relative min-h-[calc(100vh-4rem)] pt-16">
       <AnimatedBackground />
       <div className="relative z-10 max-w-5xl mx-auto px-6 py-12">
-        <div className="flex flex-col items-center mb-12">
-          <h1 className="text-4xl font-extrabold text-white mb-6">My Courses</h1>
-          <div className="w-full max-w-2xl relative">
+        <div className="flex flex-col items-center mb-16 animate-fade-in-up">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">My Courses</h1>
+          <div className="w-full max-w-2xl relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              <svg className="w-5 h-5 text-slate-400 group-focus-within:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
             <input 
               type="text"
               placeholder="Search my courses..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-black/50 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500 transition-colors backdrop-blur-md"
+              className="w-full pl-12 pr-4 py-4 bg-slate-900/60 border border-white/10 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all backdrop-blur-xl shadow-lg"
             />
           </div>
         </div>

@@ -31,7 +31,7 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses, 
       if (initialData?.documentId) {
         setFetching(true);
         const jwt = localStorage.getItem('jwt');
-        fetch('http://localhost:1337/api/quizzes/' + initialData.documentId + '?populate[questions][populate][0]=options', {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quizzes/` + initialData.documentId + '?populate[questions][populate][0]=options', {
           headers: { 'Authorization': 'Bearer ' + jwt }
         })
         .then(res => res.json())
@@ -165,8 +165,8 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses, 
       const isEditing = !!initialData?.documentId;
       const quizMethod = isEditing ? 'PUT' : 'POST';
       const quizUrl = isEditing 
-        ? 'http://localhost:1337/api/quizzes/' + initialData.documentId
-        : 'http://localhost:1337/api/quizzes';
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quizzes/` + initialData.documentId
+        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quizzes`;
 
       // 1. Create/Update Quiz
       const quizRes = await fetch(quizUrl, {
@@ -189,8 +189,8 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses, 
       await Promise.all(questions.map(async (q) => {
         const qMethod = q.documentId ? 'PUT' : 'POST';
         const qUrl = q.documentId 
-          ? 'http://localhost:1337/api/quiz-questions/' + q.documentId
-          : 'http://localhost:1337/api/quiz-questions';
+          ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quiz-questions/` + q.documentId
+          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quiz-questions`;
 
         const qRes = await fetch(qUrl, {
           method: qMethod,
@@ -209,8 +209,8 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses, 
         await Promise.all(q.options.map((o: any) => {
           const oMethod = o.documentId ? 'PUT' : 'POST';
           const oUrl = o.documentId 
-            ? 'http://localhost:1337/api/mcq-options/' + o.documentId
-            : 'http://localhost:1337/api/mcq-options';
+            ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/mcq-options/` + o.documentId
+            : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/mcq-options`;
 
           return fetch(oUrl, {
             method: oMethod,
@@ -227,7 +227,7 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses, 
       }));
 
       if (!isEditing) {
-        await fetch('http://localhost:1337/api/quizzes/' + quizId + '/actions/publish', {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quizzes/` + quizId + '/actions/publish', {
           method: 'POST',
           headers
         });

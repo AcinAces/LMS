@@ -11,7 +11,7 @@ export default function AdminProgressPage() {
     try {
       const jwt = localStorage.getItem('jwt');
       
-      const res = await fetch('http://localhost:1337/api/enrollments?populate=course,student&sort=createdAt:desc', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/enrollments?populate=course,student&sort=createdAt:desc`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       });
       

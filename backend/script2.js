@@ -1,5 +1,6 @@
+require('dotenv').config();
 const {Client}=require('pg');
-const c=new Client({connectionString:'postgresql://postgres:toNemZIHpFebRFLtQHGBtJqoutFpkbfC@altaria.proxy.rlwy.net:36817/railway',ssl:{rejectUnauthorized:false}});
+const c=new Client({connectionString:process.env.DATABASE_URL,ssl:{rejectUnauthorized:false}});
 c.connect().then(async()=>{
   const a=['api::quiz-question.quiz-question.find','api::quiz-question.quiz-question.findOne','api::quiz-question.quiz-question.update','api::quiz-question.quiz-question.delete','api::mcq-option.mcq-option.find','api::mcq-option.mcq-option.findOne','api::mcq-option.mcq-option.update','api::mcq-option.mcq-option.delete'];
   const r=await c.query('SELECT id FROM up_roles WHERE type IN (\'admin\',\'content_manager\',\'instructor\', \'authenticated\')');

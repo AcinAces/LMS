@@ -1,8 +1,16 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import DataTable, { ColumnDef } from '@/components/admin/DataTable';
-import DynamicFormModal, { FormField } from '@/components/admin/DynamicFormModal';
+
+const TOPIC_HIERARCHY: Record<string, string[]> = {
+  'Data Structure and Algorithms': ['Fundamentals', 'Maths & Recursion', 'Array & String'],
+  'Web Development': ['Frontend Basics', 'Backend Development', 'DevOps'],
+  'AI ML & Data Science': ['Machine Learning', 'Deep Learning', 'Data Analysis'],
+  'Machine Learning': ['Supervised Learning', 'Unsupervised Learning', 'Reinforcement Learning'],
+  'Python': ['Core Python', 'Django & Web', 'Data Science with Python'],
+  'Java': ['Core Java', 'Spring Boot', 'Java Collections']
+};
 
 export default function AdminBlogsPage() {
   const [blogs, setBlogs] = useState<any[]>([]);
@@ -11,11 +19,21 @@ export default function AdminBlogsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
 
+  // Form State
+  const [formData, setFormData] = useState({
+    title: '',
+    topic: '',
+    subtopic: '',
+    body: ''
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
   const fetchBlogs = async () => {
     try {
       const jwt = localStorage.getItem('jwt');
       
-      const res = await fetch('http://localhost:1337/api/blogs?populate=*', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/blogs?populate=*&pagination[limit]=1000`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       });
       
@@ -34,67 +52,112 @@ export default function AdminBlogsPage() {
     fetchBlogs();
   }, []);
 
+  const handleTogglePublish = async (row: any) => {
+    const jwt = localStorage.getItem('jwt');
+    const isCurrentlyPublished = !!row.isPublished;
+    
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/blogs/${row.documentId}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${jwt}` 
+        },
+        body: JSON.stringify({ data: { isPublished: !isCurrentlyPublished } })
+      });
+      fetchBlogs();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to change publish status');
+    }
+  };
+
   const columns: ColumnDef<any>[] = [
     { key: 'title', label: 'Title' },
-    { key: 'author', label: 'Author', render: (row) => (
-      <span className="text-gray-300">{row.author?.username || 'System'}</span>
-    )},
-    { key: 'publishedAt', label: 'Status', render: (row) => (
-      <span className={`px-2 py-1 rounded-full text-xs ${row.publishedAt ? 'bg-emerald-500/20 text-emerald-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-        {row.publishedAt ? 'Published' : 'Draft'}
-      </span>
+    { key: 'topic', label: 'Topic', render: (row) => row.topic || 'N/A' },
+    { key: 'subtopic', label: 'Subtopic', render: (row) => row.subtopic || 'N/A' },
+    { key: 'isPublished', label: 'Published', render: (row) => (
+      <label className="relative inline-flex items-center cursor-pointer">
+        <input 
+          type="checkbox" 
+          className="sr-only peer" 
+          checked={!!row.isPublished}
+          onChange={() => handleTogglePublish(row)}
+        />
+        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+      </label>
     )}
   ];
 
-  const fields: FormField[] = [
-    { key: 'title', label: 'Blog Title', type: 'text', required: true },
-    { key: 'imgURL', label: 'Cover Image URL', type: 'text' },
-    { key: 'body', label: 'Content (Markdown)', type: 'textarea', required: true },
-  ];
+  const handleOpenModal = (row: any = null) => {
+    setEditingData(row);
+    if (row) {
+      let b = row.body;
+      if (Array.isArray(b)) {
+         b = b.map((bk: any) => bk.children?.map((c: any) => c.text).join('')).join('\n');
+      }
+      setFormData({
+        title: row.title || '',
+        topic: row.topic || '',
+        subtopic: row.subtopic || '',
+        body: b || ''
+      });
+    } else {
+      setFormData({ title: '', topic: '', subtopic: '', body: '' });
+    }
+    setError('');
+    setIsModalOpen(true);
+  };
 
-  const handleSubmit = async (formData: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
     const jwt = localStorage.getItem('jwt');
     const isEditing = !!editingData?.documentId;
     
     const payload = {
       data: {
         title: formData.title,
-        imgURL: formData.imgURL,
-        body: formData.body
+        topic: formData.topic,
+        subtopic: formData.subtopic,
+        body: formData.body,
+        author: JSON.parse(localStorage.getItem('user') || '{}').id,
+        ...(isEditing ? {} : { isPublished: false })
       }
     };
 
     const url = isEditing 
-      ? `http://localhost:1337/api/blogs/${editingData.documentId}`
-      : `http://localhost:1337/api/blogs`;
+      ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/blogs/${editingData.documentId}`
+      : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/blogs`;
       
-    const res = await fetch(url, {
-      method: isEditing ? 'PUT' : 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${jwt}`
-      },
-      body: JSON.stringify(payload)
-    });
+    try {
+      const res = await fetch(url, {
+        method: isEditing ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${jwt}`
+        },
+        body: JSON.stringify(payload)
+      });
 
-    const resData = await res.json();
-    if (!res.ok) throw new Error(resData.error?.message || 'Failed to save blog');
-    
-    if (!isEditing && resData.data?.documentId) {
-       await fetch(`http://localhost:1337/api/blogs/${resData.data.documentId}/actions/publish`, {
-         method: 'POST',
-         headers: { 'Authorization': `Bearer ${jwt}` }
-       });
+      const resData = await res.json();
+      if (!res.ok) throw new Error(resData.error?.message || 'Failed to save blog');
+      
+      setIsModalOpen(false);
+      fetchBlogs();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
     }
-
-    fetchBlogs();
   };
 
   const handleDelete = async (row: any) => {
     if (!confirm(`Are you sure you want to delete blog "${row.title}"?`)) return;
     
     const jwt = localStorage.getItem('jwt');
-    await fetch(`http://localhost:1337/api/blogs/${row.documentId}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/blogs/${row.documentId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${jwt}` }
     });
@@ -108,35 +171,113 @@ export default function AdminBlogsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Manage Blogs</h1>
-        <p className="text-gray-400">Write and publish articles for your platform.</p>
+        <p className="text-gray-400">Write articles. They are saved as Drafts by default. Toggle the switch to publish.</p>
       </div>
 
       <DataTable 
         title="Blog Posts"
         columns={columns}
         data={blogs}
-        onAdd={() => { setEditingData({}); setIsModalOpen(true); }}
-        onEdit={(row) => { 
-          // Extract plain text from blocks if it's a rich text array
-          let b = row.body;
-          if (Array.isArray(b)) {
-             b = b.map((bk: any) => bk.children?.map((c: any) => c.text).join('')).join('\n');
-          }
-          setEditingData({ ...row, body: b }); 
-          setIsModalOpen(true); 
-        }}
+        onAdd={() => handleOpenModal()}
+        onEdit={(row) => handleOpenModal(row)}
         onDelete={handleDelete}
         addLabel="New Blog Post"
       />
 
-      <DynamicFormModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleSubmit}
-        title={editingData?.documentId ? 'Edit Blog' : 'Create Blog'}
-        fields={fields}
-        initialData={editingData}
-      />
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-2xl shadow-2xl relative my-8">
+            <div className="p-6 border-b border-white/10 flex justify-between items-center sticky top-0 bg-gray-900 rounded-t-2xl z-10">
+              <h2 className="text-xl font-bold text-white">{editingData ? 'Edit Blog' : 'Create Blog'}</h2>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {error && (
+                <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Topic <span className="text-red-400">*</span></label>
+                  <select
+                    required
+                    value={formData.topic}
+                    onChange={(e) => setFormData({ ...formData, topic: e.target.value, subtopic: '' })}
+                    className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 [&>option]:bg-gray-900"
+                  >
+                    <option value="">Select a Topic...</option>
+                    {Object.keys(TOPIC_HIERARCHY).map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Subtopic <span className="text-red-400">*</span></label>
+                  <select
+                    required
+                    disabled={!formData.topic}
+                    value={formData.subtopic}
+                    onChange={(e) => setFormData({ ...formData, subtopic: e.target.value })}
+                    className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 [&>option]:bg-gray-900 disabled:opacity-50"
+                  >
+                    <option value="">Select a Subtopic...</option>
+                    {formData.topic && TOPIC_HIERARCHY[formData.topic]?.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Blog Title <span className="text-red-400">*</span></label>
+                <input
+                  type="text"
+                  required
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Content (Markdown) <span className="text-red-400">*</span></label>
+                <textarea
+                  required
+                  value={formData.body}
+                  onChange={(e) => setFormData({ ...formData, body: e.target.value })}
+                  className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 min-h-[200px]"
+                />
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3 sticky bottom-0 bg-gray-900 py-2">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-600/50 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  {saving ? 'Saving...' : 'Save as Draft'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

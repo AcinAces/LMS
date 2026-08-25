@@ -36,7 +36,7 @@ export default function QuizTakingPage() {
         const headers: any = {};
         if (jwt) headers['Authorization'] = `Bearer ${jwt}`;
 
-        const res = await fetch(`http://localhost:1337/api/quizzes/${quizId}?populate[questions][populate][0]=options`, { headers });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quizzes/${quizId}?populate[questions][populate][0]=options`, { headers });
         if (res.ok) {
           const data = await res.json();
           const quizData = data.data;
@@ -83,7 +83,7 @@ export default function QuizTakingPage() {
         ...(jwt ? { 'Authorization': `Bearer ${jwt}` } : {})
       };
 
-      const res = await fetch(`http://localhost:1337/api/quiz-attempts/${attemptId}/violation`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quiz-attempts/${attemptId}/violation`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -124,7 +124,7 @@ export default function QuizTakingPage() {
         }
       }
 
-      const res = await fetch(`http://localhost:1337/api/quiz-attempts/${attemptId}/submit`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quiz-attempts/${attemptId}/submit`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -221,7 +221,7 @@ export default function QuizTakingPage() {
         ...(jwt ? { 'Authorization': `Bearer ${jwt}` } : {})
       };
 
-      const res = await fetch(`http://localhost:1337/api/quiz-attempts/start`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quiz-attempts/start`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ data: { quizId: quiz.documentId } })
