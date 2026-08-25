@@ -13,8 +13,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // If already logged in and session is valid, redirect to home
+    // If already logged in and session is valid, redirect based on role
     const jwt = localStorage.getItem('jwt');
+    const userStr = localStorage.getItem('user');
     const timestampStr = localStorage.getItem('loginTimestamp');
     
     if (jwt && timestampStr) {
@@ -22,7 +23,11 @@ export default function LoginPage() {
       const isExpired = Date.now() - loginTime > 10 * 60 * 1000; // 10 mins
       
       if (!isExpired) {
-        router.push('/');
+        const roleType = userStr ? JSON.parse(userStr)?.role?.type : null;
+        if (roleType === 'admin') router.push('/admin');
+        else if (roleType === 'content_manager') router.push('/content-manager');
+        else if (roleType === 'instructor') router.push('/instructor');
+        else router.push('/');
       } else {
         // Expired, clear it
         localStorage.removeItem('jwt');
@@ -53,11 +58,30 @@ export default function LoginPage() {
         return;
       }
 
-      // Success! Save token and timestamp, then redirect
+      // Fetch user's role
+      const meRes = await fetch('http://localhost:1337/api/users/me?populate=role', {
+        headers: {
+          'Authorization': `Bearer ${data.jwt}`
+        }
+      });
+      const meData = await meRes.json();
+      const userWithRole = { ...data.user, role: meData.role };
+
+      // Success! Save token and timestamp, then redirect based on role
       localStorage.setItem('jwt', data.jwt);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('user', JSON.stringify(userWithRole));
       localStorage.setItem('loginTimestamp', Date.now().toString());
-      router.push('/');
+      
+      const roleType = meData.role?.type;
+      if (roleType === 'admin') {
+        router.push('/admin');
+      } else if (roleType === 'content_manager') {
+        router.push('/content-manager');
+      } else if (roleType === 'instructor') {
+        router.push('/instructor');
+      } else {
+        router.push('/');
+      }
       
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
