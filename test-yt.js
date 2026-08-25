@@ -1,0 +1,1 @@
+fetch('https://www.youtube.com/watch?v=dQw4w9WgXcQ').then(r=>r.text()).then(t=>{ const match = t.match(/itemprop="duration" content="(.*?)"/); console.log(match ? match[1] : 'Not found'); process.exit(0); })

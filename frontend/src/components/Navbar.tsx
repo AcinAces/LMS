@@ -53,7 +53,38 @@ export default function Navbar() {
 
     // Check every 30 seconds for auto-logout while idling
     const intervalId = setInterval(checkSession, 30000);
-    return () => clearInterval(intervalId);
+
+    // Auto-refresh the session timer on user activity
+    const updateActivity = () => {
+      const jwt = localStorage.getItem('jwt');
+      if (jwt) {
+        localStorage.setItem('loginTimestamp', Date.now().toString());
+      }
+    };
+
+    // Throttled event listeners for performance
+    let throttleTimer: NodeJS.Timeout | null = null;
+    const handleActivity = () => {
+      if (!throttleTimer) {
+        updateActivity();
+        throttleTimer = setTimeout(() => {
+          throttleTimer = null;
+        }, 5000); // Only update timestamp once every 5 seconds maximum
+      }
+    };
+
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('click', handleActivity);
+    window.addEventListener('scroll', handleActivity);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('click', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+    };
   }, [pathname, router]);
 
   const handleLogout = () => {

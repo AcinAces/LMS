@@ -11,6 +11,15 @@
   },
   "pluginOptions": {},
   "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "youtubeVideoId": {
+      "type": "string"
+    },
+    "durationInSeconds": {
+      "type": "integer"
+    },
     "content": {
       "type": "richtext"
     },

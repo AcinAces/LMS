@@ -489,6 +489,7 @@ export interface ApiCourseCourse extends Struct.CollectionTypeSchema {
       'manyToOne',
       'plugin::users-permissions.user'
     >;
+    courseDescription: Schema.Attribute.RichText;
     courseTag: Schema.Attribute.String;
     courseTitle: Schema.Attribute.String;
     createdAt: Schema.Attribute.DateTime;
@@ -564,6 +565,8 @@ export interface ApiLessonProgressLessonProgress
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    lastWatchedPosition: Schema.Attribute.Integer &
+      Schema.Attribute.DefaultTo<0>;
     lesson: Schema.Attribute.Relation<'manyToOne', 'api::lesson.lesson'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -571,6 +574,8 @@ export interface ApiLessonProgressLessonProgress
       'api::lesson-progress.lesson-progress'
     > &
       Schema.Attribute.Private;
+    maxWatchedPosition: Schema.Attribute.Integer &
+      Schema.Attribute.DefaultTo<0>;
     publishedAt: Schema.Attribute.DateTime;
     student: Schema.Attribute.Relation<
       'manyToOne',
@@ -598,6 +603,7 @@ export interface ApiLessonLesson extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    durationInSeconds: Schema.Attribute.Integer;
     lessonProgresses: Schema.Attribute.Relation<
       'oneToMany',
       'api::lesson-progress.lesson-progress'
@@ -610,9 +616,11 @@ export interface ApiLessonLesson extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     order: Schema.Attribute.Integer;
     publishedAt: Schema.Attribute.DateTime;
+    title: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    youtubeVideoId: Schema.Attribute.String;
   };
 }
 
@@ -1286,7 +1294,6 @@ export interface PluginUsersPermissionsUser
       'manyToOne',
       'plugin::users-permissions.role'
     >;
-    studentID: Schema.Attribute.String & Schema.Attribute.Unique;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

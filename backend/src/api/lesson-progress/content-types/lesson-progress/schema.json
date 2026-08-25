@@ -18,6 +18,14 @@
     "completedAt": {
       "type": "datetime"
     },
+    "lastWatchedPosition": {
+      "type": "integer",
+      "default": 0
+    },
+    "maxWatchedPosition": {
+      "type": "integer",
+      "default": 0
+    },
     "student": {
       "type": "relation",
       "relation": "manyToOne",

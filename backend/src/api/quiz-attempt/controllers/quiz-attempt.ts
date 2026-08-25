@@ -5,8 +5,10 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
     const user = ctx.state.user;
     if (!user) return ctx.unauthorized('You must be logged in to attempt a quiz');
 
-    if (user.role?.type === 'instructor' || user.role?.type === 'content_manager') {
-      return ctx.forbidden('Instructors and Content Managers cannot take quizzes.');
+    // Whitelist approach: Only 'authenticated' (Student role) can take quizzes.
+    // Instructors, Content Managers, and Admins are strictly blocked.
+    if (user.role?.type !== 'authenticated') {
+      return ctx.forbidden('Only Students are allowed to take quizzes.');
     }
 
     if (!ctx.request.body.data) ctx.request.body.data = {};
