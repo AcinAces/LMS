@@ -1,0 +1,9 @@
+{
+  "attributes": {
+    "studentID": {
+      "type": "string",
+      "unique": true,
+      "configurable": false
+    }
+  }
+}

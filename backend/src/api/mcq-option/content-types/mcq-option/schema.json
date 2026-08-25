@@ -1,0 +1,28 @@
+{
+  "kind": "collectionType",
+  "collectionName": "mcq-options",
+  "info": {
+    "singularName": "mcq-option",
+    "pluralName": "mcq-options",
+    "displayName": "MCQ Option"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "optionText": {
+      "type": "text"
+    },
+    "isCorrect": {
+      "type": "boolean",
+      "default": false
+    },
+    "question": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::quiz-question.quiz-question",
+      "inversedBy": "options"
+    }
+  }
+}
