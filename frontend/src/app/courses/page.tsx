@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AnimatedBackground from '@/components/AnimatedBackground';
+import ReviewsListModal from '@/components/ReviewsListModal';
 
 interface Course {
   id: number;
@@ -13,6 +14,7 @@ interface Course {
   lessons: any[];
   enrollments: any[];
   courseAuthor: any;
+  reviews?: any[];
 }
 
 export default function CoursesPage() {
@@ -22,6 +24,7 @@ export default function CoursesPage() {
   const [sortOption, setSortOption] = useState('newest');
   const [userId, setUserId] = useState<number | null>(null);
   const [userEnrollments, setUserEnrollments] = useState<any[]>([]);
+  const [viewingReviews, setViewingReviews] = useState<Course | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -36,9 +39,8 @@ export default function CoursesPage() {
         const headers: HeadersInit = {};
         if (jwt) headers['Authorization'] = `Bearer ${jwt}`;
         
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?populate[0]=courseAuthor&populate[1]=lessons`, {
-          headers
-        });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?populate[0]=courseAuthor&populate[1]=lessons&populate[2]=reviews&populate[3]=reviews.author`, {
+          headers, cache: 'no-store' });
 
         if (res.status === 401) {
           localStorage.removeItem('jwt');
@@ -54,7 +56,7 @@ export default function CoursesPage() {
         setCourses(data.data || []);
 
         if (jwt) {
-          const enrollRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/enrollments`, { headers });
+          const enrollRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/enrollments`, { headers, cache: 'no-store' });
           if (enrollRes.ok) {
             const enrollData = await enrollRes.json();
             setUserEnrollments(enrollData.data || []);
@@ -67,7 +69,7 @@ export default function CoursesPage() {
       }
     };
     fetchCourses();
-  }, []);
+  }, [router]);
 
   const filteredCourses = courses
     .filter(course => 
@@ -137,20 +139,35 @@ export default function CoursesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up delay-100">
             {filteredCourses.map((course, index) => {
               const isEnrolled = userId ? userEnrollments?.some((e: any) => e.course?.documentId === course.documentId) : false;
+              const hasReviews = course.reviews && course.reviews.length > 0;
+              const avgRating = hasReviews ? (course.reviews!.reduce((acc, r) => acc + Number(r.overallRating), 0) / course.reviews!.length).toFixed(1) : null;
               
               return (
                 <div key={course.id} className="bg-slate-900/50 backdrop-blur-xl border border-white/5 rounded-2xl p-6 hover:border-emerald-500/30 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 group flex flex-col justify-between" style={{ animationDelay: `${(index % 10) * 50}ms` }}>
                   
                   <div>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {course.courseTag ? course.courseTag.split(',').map((t, i) => (
-                        <span key={i} className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-md border border-emerald-500/20">{t.trim()}</span>
-                      )) : (
-                        <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-md border border-emerald-500/20">General</span>
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                      <div className="flex flex-wrap gap-2">
+                        {course.courseTag ? course.courseTag.split(',').map((t, i) => (
+                          <span key={i} className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-md border border-emerald-500/20">{t.trim()}</span>
+                        )) : (
+                          <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-md border border-emerald-500/20">General</span>
+                        )}
+                        {isEnrolled && (
+                          <span className="px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-bold rounded-md border border-blue-500/20">Enrolled</span>
+                        )}
+                      </div>
+                      {hasReviews && (
+                        <button onClick={() => setViewingReviews(course)} className="cursor-pointer flex items-center gap-1 text-amber-400 text-sm font-bold hover:text-amber-300 transition-colors bg-amber-400/10 px-2 py-1 rounded-lg border border-amber-400/20">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                          {avgRating} ({course.reviews!.length})
+                        </button>
                       )}
                     </div>
                     
-                    <h3 className="text-2xl font-bold text-slate-100 mb-3 group-hover:text-emerald-400 transition-colors line-clamp-2">{course.courseTitle}</h3>
+                    <Link href={`/courses/${course.documentId}`}>
+                      <h3 className="cursor-pointer text-2xl font-bold text-slate-100 mb-3 group-hover:text-emerald-400 transition-colors line-clamp-2">{course.courseTitle}</h3>
+                    </Link>
                     
                     <div className="flex items-center gap-4 text-sm text-slate-400 mb-6">
                       <div className="flex items-center gap-1.5">
@@ -171,7 +188,7 @@ export default function CoursesPage() {
                       </Link>
                     ) : isEnrolled ? (
                       <Link href={`/courses/${course.documentId}`} className="w-full py-3 flex justify-center items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-sm font-bold rounded-xl transition-colors">
-                        Continue Learning <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                        Select <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
                       </Link>
                     ) : (
                       <Link href={`/courses/${course.documentId}`} className="w-full py-3 flex justify-center items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(16,185,129,0.4)] transition-all">
@@ -186,6 +203,17 @@ export default function CoursesPage() {
           </div>
         )}
       </div>
+
+      {viewingReviews && viewingReviews.reviews && (
+        <ReviewsListModal 
+          courseTitle={viewingReviews.courseTitle}
+          reviews={viewingReviews.reviews}
+          onClose={() => setViewingReviews(null)}
+        />
+      )}
     </div>
   );
 }
+
+
+

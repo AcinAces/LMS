@@ -170,7 +170,7 @@ export default function TrackProgressPage() {
                         <div className="flex justify-between text-sm text-gray-400">
                           <span>{course.completedLessons} / {course.totalLessons} Lessons Completed</span>
                           <Link href={`/courses/${course.documentId}`} className="text-blue-400 hover:text-blue-300 font-medium">
-                            Continue &rarr;
+                            Select &rarr;
                           </Link>
                         </div>
                       </div>

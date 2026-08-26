@@ -104,3 +104,13 @@ html.is-scrolling::-webkit-scrollbar-thumb:hover {
   background-color: #00AFB6;
   color: #fff;
 }
+@keyframes gradientWave {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient-wave {
+  background-size: 200% auto;
+  animation: gradientWave 3s linear infinite;
+}
