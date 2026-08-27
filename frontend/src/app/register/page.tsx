@@ -20,19 +20,8 @@ export default function RegisterPage() {
   useEffect(() => {
     // If already logged in and session is valid, redirect to home
     const jwt = localStorage.getItem('jwt');
-    const timestampStr = localStorage.getItem('loginTimestamp');
-    
-    if (jwt && timestampStr) {
-      const loginTime = parseInt(timestampStr, 10);
-      const isExpired = Date.now() - loginTime > 10 * 60 * 1000; // 10 mins
-      
-      if (!isExpired) {
-        router.push('/');
-      } else {
-        localStorage.removeItem('jwt');
-        localStorage.removeItem('user');
-        localStorage.removeItem('loginTimestamp');
-      }
+    if (jwt) {
+      router.push('/');
     }
   }, [router]);
 

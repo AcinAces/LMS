@@ -104,6 +104,14 @@ html.is-scrolling::-webkit-scrollbar-thumb:hover {
   background-color: #00AFB6;
   color: #fff;
 }
+/* Global Button Cursor Fix */
+button:not(:disabled) {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
 @keyframes gradientWave {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -114,3 +122,4 @@ html.is-scrolling::-webkit-scrollbar-thumb:hover {
   background-size: 200% auto;
   animation: gradientWave 3s linear infinite;
 }
+

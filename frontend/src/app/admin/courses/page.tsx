@@ -6,6 +6,7 @@ import DynamicFormModal, { FormField } from '@/components/admin/DynamicFormModal
 
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
+  const [instructors, setInstructors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -14,11 +15,21 @@ export default function AdminCoursesPage() {
   const fetchCourses = async () => {
     try {
       const jwt = localStorage.getItem('jwt');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?populate=*`, {
-        headers: { 'Authorization': `Bearer ${jwt}` }
-      });
-      const data = await res.json();
+      const [coursesRes, instructorsRes] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?populate=*`, {
+          headers: { 'Authorization': `Bearer ${jwt}` }
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users?filters[role][type][$eq]=instructor`, {
+          headers: { 'Authorization': `Bearer ${jwt}` }
+        })
+      ]);
+      const data = await coursesRes.json();
       setCourses(data.data || []);
+      
+      if (instructorsRes.ok) {
+        const instData = await instructorsRes.json();
+        setInstructors(instData || []);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -33,6 +44,9 @@ export default function AdminCoursesPage() {
   const columns: ColumnDef<any>[] = [
     { key: 'documentId', label: 'ID', render: (row) => <span className="text-gray-500 font-mono text-xs">{row.documentId.substring(0, 8)}</span> },
     { key: 'courseTitle', label: 'Title' },
+    { key: 'courseAuthor', label: 'Instructor', render: (row) => (
+      <span className="text-emerald-400">{row.courseAuthor?.username || 'Unassigned'}</span>
+    )},
     { key: 'courseTag', label: 'Tag', render: (row) => (
       <span className="px-2 py-1 bg-white/10 rounded-full text-xs">{row.courseTag || 'None'}</span>
     )},
@@ -45,6 +59,7 @@ export default function AdminCoursesPage() {
 
   const fields: FormField[] = [
     { key: 'courseTitle', label: 'Course Title', type: 'text', required: true },
+    { key: 'courseAuthor', label: 'Select Instructor', type: 'select', required: true, options: instructors.map(i => ({ value: i.id, label: i.username })) },
     { key: 'courseTag', label: 'Tag (e.g. Popular, New)', type: 'text' },
     { key: 'courseDescription', label: 'Description', type: 'textarea' },
   ];
@@ -58,6 +73,7 @@ export default function AdminCoursesPage() {
     const payload = {
       data: {
         courseTitle: formData.courseTitle,
+        ...(formData.courseAuthor ? { courseAuthor: { connect: [Number(formData.courseAuthor)] } } : {}),
         courseTag: formData.courseTag,
         // Wrap text in a block for richtext in v5 if needed, but string works for plain text attributes
         courseDescription: formData.courseDescription
@@ -125,7 +141,11 @@ export default function AdminCoursesPage() {
           if (Array.isArray(desc)) {
              desc = desc.map((b: any) => b.children?.map((c: any) => c.text).join('')).join('\n');
           }
-          setEditingData({ ...row, courseDescription: desc }); 
+          setEditingData({ 
+            ...row, 
+            courseDescription: desc,
+            courseAuthor: row.courseAuthor?.id
+          }); 
           setIsModalOpen(true); 
         }}
         onDelete={handleDelete}

@@ -58,9 +58,22 @@ export default function AdminLessonsPage() {
   const fields: FormField[] = [
     { key: 'title', label: 'Lesson Title', type: 'text', required: true },
     { key: 'youtubeVideoId', label: 'YouTube URL or ID', type: 'text', required: true },
-    { key: 'order', label: 'Display Order', type: 'number', required: true },
     { key: 'course', label: 'Course', type: 'select', options: courses.map(c => ({ value: c.documentId, label: c.courseTitle })) },
+    { key: 'order', label: 'Lesson Number', type: 'number', required: true },
   ];
+
+  const handleFormChange = (newData: any, setFormData: any) => {
+    // If course is selected and it's a new lesson, auto-suggest the lesson number
+    if (newData.course && !editingData?.documentId && newData._lastCourseForOrder !== newData.course) {
+      const courseLessons = lessons.filter(l => l.course?.documentId === newData.course);
+      const takenOrders = courseLessons.map(l => l.order).filter(o => o > 0);
+      let mex = 1;
+      while (takenOrders.includes(mex)) {
+        mex++;
+      }
+      setFormData((prev: any) => ({ ...prev, order: mex, _lastCourseForOrder: newData.course }));
+    }
+  };
 
   const handleSubmit = async (formData: any) => {
     const jwt = localStorage.getItem('jwt');
@@ -73,11 +86,25 @@ export default function AdminLessonsPage() {
       videoId = url.searchParams.get('v') || url.pathname.split('/').pop() || videoId;
     }
     
+    // Prevent 0 or negative order
+    const requestedOrder = Number(formData.order);
+    if (requestedOrder <= 0) {
+      alert("Lesson number must be greater than 0");
+      throw new Error("Invalid lesson number");
+    }
+
+    // Check if taken
+    const courseLessons = lessons.filter(l => l.course?.documentId === formData.course && l.documentId !== editingData?.documentId);
+    if (courseLessons.some(l => l.order === requestedOrder)) {
+      alert("This Lesson number is already taken in the selected course!");
+      throw new Error("Lesson number taken");
+    }
+    
     const payload = {
       data: {
         title: formData.title,
         youtubeVideoId: videoId,
-        order: Number(formData.order),
+        order: requestedOrder,
         course: formData.course || null
       }
     };
@@ -149,6 +176,7 @@ export default function AdminLessonsPage() {
         title={editingData?.documentId ? 'Edit Lesson' : 'Create Lesson'}
         fields={fields}
         initialData={editingData}
+        onChange={handleFormChange}
       />
     </div>
   );

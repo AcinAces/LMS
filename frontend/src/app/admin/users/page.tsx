@@ -63,6 +63,7 @@ export default function AdminUsersPage() {
   const fields: FormField[] = [
     { key: 'username', label: 'Username', type: 'text', required: true },
     { key: 'email', label: 'Email', type: 'text', required: true },
+    ...(editingData?.id ? [] : [{ key: 'password', label: 'Password', type: 'password' as const, required: true }]),
     { key: 'role', label: 'Role', type: 'select', options: roles.map(r => ({ value: r.id, label: r.name })) },
     { key: 'blocked', label: 'Blocked (prevent login)', type: 'boolean' }
   ];
@@ -81,7 +82,7 @@ export default function AdminUsersPage() {
 
     if (!isEditing) {
       // Create user needs a password
-      (payload as any).password = 'ChangeMe123!';
+      (payload as any).password = formData.password;
       (payload as any).confirmed = true;
     }
 

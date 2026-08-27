@@ -5,15 +5,20 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import CustomVideoPlayer from '@/components/CustomVideoPlayer';
+import LessonChat from '@/components/LessonChat';
 import ReactMarkdown from 'react-markdown';
 
 interface Lesson {
   id: number;
   documentId: string;
   title: string;
+  description: string;
+  videoUrl: string;
   youtubeVideoId: string;
   durationInSeconds: number;
   content: string;
+  order: number;
+  isPreview: boolean;
 }
 
 interface Course {
@@ -28,6 +33,7 @@ export default function LessonPage() {
   
   const [course, setCourse] = useState<Course | null>(null);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
+  const videoPlayerRef = useRef<any>(null);
   const [progress, setProgress] = useState<any>(null);
   const [allProgress, setAllProgress] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -141,30 +147,14 @@ export default function LessonPage() {
     }
   }, [params.lessonId, isStaff]);
 
-  const handleInstantFinish = () => {
-    if (isStaff || !progress || progress.completed || !currentLesson) return;
-    
-    const maxPos = currentLesson.durationInSeconds || progress.maxWatchedPosition || 0;
-    
-    // Update current progress state
-    setProgress((prev: any) => ({
-      ...prev,
-      maxWatchedPosition: maxPos,
-      completed: true
-    }));
-
-    // Update global progress state for sidebar
-    setAllProgress((prev: any[]) => {
-      const exists = prev.find(p => p.lesson?.documentId === params.lessonId);
-      if (exists) {
-        return prev.map(p => p.lesson?.documentId === params.lessonId ? { ...p, completed: true } : p);
-      }
-      return [...prev, { lesson: { documentId: params.lessonId }, completed: true }];
-    });
-
+  const markLessonComplete = async () => {
     const jwt = localStorage.getItem('jwt');
-    if (jwt) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lesson-progresses/sync`, {
+    if (!jwt || isStaff || !currentLesson) return;
+
+    const maxPos = currentLesson.durationInSeconds || progress.maxWatchedPosition || 0;
+
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lesson-progresses/sync`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -176,7 +166,9 @@ export default function LessonPage() {
           maxWatchedPosition: Math.floor(maxPos),
           completed: true
         })
-      }).catch(err => console.error('Failed to sync progress:', err));
+      });
+    } catch (err) {
+      console.error('Failed to sync progress:', err);
     }
   };
 
@@ -233,6 +225,7 @@ export default function LessonPage() {
             {progress && currentLesson.youtubeVideoId ? (
               <div className="w-full">
                 <CustomVideoPlayer
+                  ref={videoPlayerRef}
                   videoId={currentLesson.youtubeVideoId}
                   initialLastWatched={progress.lastWatchedPosition || 0}
                   initialMaxWatched={progress.maxWatchedPosition || 0}
@@ -240,17 +233,6 @@ export default function LessonPage() {
                   onProgressSync={handleProgressSync}
                   isStaff={isStaff}
                 />
-                {!isStaff && !progress.completed && (
-                  <div className="flex justify-end mt-4">
-                    <button
-                      onClick={handleInstantFinish}
-                      className="px-4 py-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-lg text-sm font-bold transition-colors flex items-center gap-2"
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                      Finish Lesson Instantly
-                    </button>
-                  </div>
-                )}
               </div>
             ) : (
               <div className="w-full aspect-video bg-black rounded-xl border border-white/10 flex items-center justify-center">
@@ -320,10 +302,14 @@ export default function LessonPage() {
               <h3 className="text-xl font-bold text-white mb-6">Course Lessons</h3>
               
               <div className="space-y-3">
-                {course.lessons.map((lesson, idx) => {
+                {course.lessons.map((lesson: any, idx: number) => {
                   const isCurrent = lesson.documentId === currentLesson.documentId;
                   const lessonProgress = allProgress.find(p => p.lesson?.documentId === lesson.documentId);
                   const isCompleted = lessonProgress?.completed;
+                  
+                  const maxWatched = lessonProgress?.maxWatchedPosition || 0;
+                  const totalDuration = lesson.durationInSeconds || 0;
+                  const timeRemaining = Math.max(0, totalDuration - maxWatched);
 
                   return (
                     <Link 
@@ -351,7 +337,7 @@ export default function LessonPage() {
                           </p>
                           {!isCompleted && (
                             <p className="text-xs text-gray-500 mt-1">
-                              {Math.floor((lesson.durationInSeconds || 0) / 60)}m {(lesson.durationInSeconds || 0) % 60}s
+                              {Math.floor(timeRemaining / 60)}m {Math.floor(timeRemaining % 60)}s left
                             </p>
                           )}
                         </div>
@@ -364,6 +350,13 @@ export default function LessonPage() {
           </div>
 
         </div>
+        <LessonChat 
+          lessonId={currentLesson.documentId} 
+          courseId={course.documentId} 
+          lessonTitle={currentLesson.title}
+          lessonOrder={currentLesson.order}
+          isStaff={isStaff} 
+        />
       </div>
     </div>
   );

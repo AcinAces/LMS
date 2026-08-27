@@ -63,8 +63,8 @@ export default function AdminCoursesPage() {
         courseTitle: formData.courseTitle,
         courseTag: formData.courseTag,
         courseDescription: formData.courseDescription,
-        // Enforce the author is the currently logged in instructor
-        courseAuthor: user?.id
+        // Enforce the author is the currently logged in instructor (using Strapi v5 connect syntax)
+        ...(user ? { courseAuthor: { connect: [user.documentId || user.id] } } : {})
       }
     };
 

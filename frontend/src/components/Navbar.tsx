@@ -1,8 +1,29 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
+
+function timeAgo(dateParam: string | Date) {
+  if (!dateParam) return '';
+  const date = typeof dateParam === 'object' ? dateParam : new Date(dateParam);
+  const today = new Date();
+  const seconds = Math.round((today.getTime() - date.getTime()) / 1000);
+  const minutes = Math.round(seconds / 60);
+  const hours = Math.round(minutes / 60);
+  const days = Math.round(hours / 24);
+  const weeks = Math.round(days / 7);
+  const months = Math.round(days / 30);
+  const years = Math.round(days / 365);
+
+  if (seconds < 60) return `${seconds < 0 ? 0 : seconds} seconds ago`;
+  else if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  else if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  else if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+  else if (weeks < 4) return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+  else if (months < 12) return `${months} month${months > 1 ? 's' : ''} ago`;
+  else return `${years} year${years > 1 ? 's' : ''} ago`;
+}
 
 export default function Navbar() {
   const router = useRouter();
@@ -33,6 +54,21 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showDropdown]);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+  // Notifications State
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<{unread: any[], marked: any[]}>({ unread: [], marked: [] });
+  const [activeNotifTab, setActiveNotifTab] = useState<'unread' | 'marked'>('unread');
+  const notifRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleNotifClickOutside(event: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    }
+    if (showNotifications) document.addEventListener('mousedown', handleNotifClickOutside);
+    return () => document.removeEventListener('mousedown', handleNotifClickOutside);
+  }, [showNotifications]);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -76,7 +112,26 @@ export default function Navbar() {
         console.error('Failed to fetch fresh user data', err);
       }
     };
+    
+    const fetchNotifications = async () => {
+      const jwt = localStorage.getItem('jwt');
+      if (!jwt) return;
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lesson-messages/notifications`, {
+          headers: { 'Authorization': `Bearer ${jwt}` },
+          cache: 'no-store'
+        });
+        if (res.ok) {
+          const json = await res.json();
+          setNotifications(json.data || { unread: [], marked: [] });
+        }
+      } catch (err) {
+        console.error('Failed to fetch notifications', err);
+      }
+    };
+
     fetchFreshUser();
+    fetchNotifications();
 
     // Close mobile menu on route change
     setShowMobileMenu(false);
@@ -209,9 +264,81 @@ export default function Navbar() {
 
             {/* Profile Dropdown / Login Button (Visible on all sizes) */}
             {username ? (
-              <div className="relative flex items-center border-l border-white/10 pl-2 lg:pl-4" ref={dropdownRef}>
+              <div className="relative flex items-center gap-2 border-l border-white/10 pl-2 lg:pl-4" ref={dropdownRef}>
+                
+                {/* Notification Button */}
+                <div className="relative flex items-center" ref={notifRef}>
+                  <button 
+                    onClick={() => {
+                      setShowNotifications(!showNotifications);
+                      if (!showNotifications) setShowDropdown(false);
+                    }}
+                    className="p-2 text-slate-300 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors relative"
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    {notifications.unread?.length > 0 && (
+                      <span className="absolute top-1.5 right-2 w-2 h-2 bg-red-500 rounded-full border border-slate-950"></span>
+                    )}
+                  </button>
+
+                  {showNotifications && (
+                    <div className="absolute right-0 top-full mt-2 w-80 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up origin-top-right z-50">
+                      <div className="px-4 py-3 border-b border-slate-800/50 bg-slate-800/20 flex items-center justify-between">
+                        <h3 className="font-semibold text-slate-200">Notifications</h3>
+                        <div className="flex gap-2 text-xs font-medium">
+                          <button onClick={() => setActiveNotifTab('unread')} className={`px-2 py-1 rounded transition-colors ${activeNotifTab === 'unread' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>New</button>
+                          <button onClick={() => setActiveNotifTab('marked')} className={`px-2 py-1 rounded transition-colors ${activeNotifTab === 'marked' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>Marked</button>
+                        </div>
+                      </div>
+                      <div className="max-h-96 overflow-y-auto">
+                        {(!notifications[activeNotifTab] || notifications[activeNotifTab].length === 0) ? (
+                          <div className="p-8 text-center text-slate-500 text-sm">
+                            No {activeNotifTab} notifications
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-slate-800/50">
+                            {notifications[activeNotifTab].map((notif: any) => (
+                              <button
+                                key={`${notif.lessonId}-${notif.studentId}`}
+                                onClick={async () => {
+                                  setShowNotifications(false);
+                                  if (activeNotifTab === 'unread') {
+                                    const jwt = localStorage.getItem('jwt');
+                                    if (jwt) {
+                                      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lesson-messages/chat/${notif.lessonId}/read`, {
+                                        method: 'PUT',
+                                        headers: { 'Authorization': `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(notif.studentId ? { studentId: notif.studentId } : {})
+                                      }).catch(e => console.error(e));
+                                    }
+                                    setNotifications(prev => ({
+                                      ...prev,
+                                      unread: prev.unread.filter(n => !(n.lessonId === notif.lessonId && n.studentId === notif.studentId)),
+                                      marked: [notif, ...prev.marked]
+                                    }));
+                                  }
+                                  router.push(`/courses/${notif.courseId}/lesson/${notif.lessonId}`);
+                                }}
+                                className="w-full text-left px-4 py-3 hover:bg-slate-800/50 transition-colors"
+                              >
+                                <p className="text-sm text-slate-300">{notif.title}</p>
+                                <p className="text-xs text-slate-500 mt-1">{timeAgo(notif.createdAt)}</p>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <button 
-                  onClick={() => setShowDropdown(!showDropdown)}
+                  onClick={() => {
+                    setShowDropdown(!showDropdown);
+                    if (!showDropdown) setShowNotifications(false);
+                  }}
                   className="cursor-pointer flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 bg-slate-800/50 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 rounded-lg text-sm font-medium text-slate-200 hover:text-emerald-400 transition-all shadow-sm"
                 >
                   <svg className="w-4 h-4 text-emerald-500 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
@@ -402,5 +529,8 @@ export default function Navbar() {
     </>
   );
 }
+
+
+
 
 

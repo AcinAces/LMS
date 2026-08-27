@@ -16,24 +16,13 @@ export default function LoginPage() {
     // If already logged in and session is valid, redirect based on role
     const jwt = localStorage.getItem('jwt');
     const userStr = localStorage.getItem('user');
-    const timestampStr = localStorage.getItem('loginTimestamp');
     
-    if (jwt && timestampStr) {
-      const loginTime = parseInt(timestampStr, 10);
-      const isExpired = Date.now() - loginTime > 10 * 60 * 1000; // 10 mins
-      
-      if (!isExpired) {
-        const roleType = userStr ? JSON.parse(userStr)?.role?.type : null;
-        if (roleType === 'admin') router.push('/admin');
-        else if (roleType === 'content_manager') router.push('/content-manager');
-        else if (roleType === 'instructor') router.push('/instructor');
-        else router.push('/');
-      } else {
-        // Expired, clear it
-        localStorage.removeItem('jwt');
-        localStorage.removeItem('user');
-        localStorage.removeItem('loginTimestamp');
-      }
+    if (jwt) {
+      const roleType = userStr ? JSON.parse(userStr)?.role?.type : null;
+      if (roleType === 'admin') router.push('/admin');
+      else if (roleType === 'content_manager') router.push('/content-manager');
+      else if (roleType === 'instructor') router.push('/instructor');
+      else router.push('/');
     }
   }, [router]);
 

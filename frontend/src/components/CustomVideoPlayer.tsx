@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import YouTube, { YouTubeEvent, YouTubePlayer } from 'react-youtube';
 
 interface CustomVideoPlayerProps {
@@ -12,14 +12,14 @@ interface CustomVideoPlayerProps {
   isStaff?: boolean;
 }
 
-export default function CustomVideoPlayer({
+const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
   videoId,
   initialLastWatched,
   initialMaxWatched,
   isCompleted,
   onProgressSync,
   isStaff = false,
-}: CustomVideoPlayerProps) {
+}, ref) => {
   const [player, setPlayer] = useState<YouTubePlayer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -28,6 +28,11 @@ export default function CustomVideoPlayer({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [qualities, setQualities] = useState<string[]>([]);
   const [currentQuality, setCurrentQuality] = useState<string>('auto');
+  
+  // Volume state
+  const [volume, setVolume] = useState(100);
+  const [isMuted, setIsMuted] = useState(false);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   
   const [maxWatched, setMaxWatched] = useState(initialMaxWatched);
   const [completed, setCompleted] = useState(isCompleted);
@@ -61,9 +66,37 @@ export default function CustomVideoPlayer({
     },
   };
 
+  const toggleMute = () => {
+    if (!player) return;
+    if (isMuted) {
+      player.unMute();
+      setIsMuted(false);
+      setVolume(player.getVolume());
+    } else {
+      player.mute();
+      setIsMuted(true);
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!player) return;
+    const vol = parseFloat(e.target.value);
+    setVolume(vol);
+    player.setVolume(vol);
+    if (vol > 0 && isMuted) {
+      player.unMute();
+      setIsMuted(false);
+    } else if (vol === 0 && !isMuted) {
+      player.mute();
+      setIsMuted(true);
+    }
+  };
+
   const onReady = (event: YouTubeEvent) => {
     setPlayer(event.target);
     setDuration(event.target.getDuration());
+    setVolume(event.target.getVolume());
+    setIsMuted(event.target.isMuted());
     // Force play as a fallback for some browsers
     event.target.playVideo();
   };
@@ -96,24 +129,16 @@ export default function CustomVideoPlayer({
       const time = await player.getCurrentTime();
       setCurrentTime(time);
 
-      // Anti-cheat: prevent skipping if not completed
-      // Allowed jump must scale with playback speed (e.g. 3x speed = 3 seconds per second + buffer)
-      const allowedJump = Math.max(2, playbackRate * 2);
-      
-      if (!completed && time > maxWatched + allowedJump) {
-        // If they somehow skipped ahead more than the allowed buffer, snap back
-        player.seekTo(maxWatched);
-      } else {
-        if (time > maxWatched) setMaxWatched(time);
-      }
+      // Update max watched
+      if (time > maxWatched) setMaxWatched(time);
 
-      // Check for completion (95% watched)
-      if (!completed && duration > 0 && time / duration > 0.95) {
+      // Check for completion (100% watched, allowing 1s margin for floating point inaccuracies)
+      if (!completed && duration > 0 && time >= duration - 1) {
         setCompleted(true);
       }
 
       // Sync with parent every ~5 seconds
-      onProgressSync(time, Math.max(time, maxWatched), completed || (time / duration > 0.95));
+      onProgressSync(time, Math.max(time, maxWatched), completed || (time >= duration - 1));
       
     }, 1000);
 
@@ -162,15 +187,8 @@ export default function CustomVideoPlayer({
     if (!player) return;
     const newTime = parseFloat(e.target.value);
 
-    // If not completed and not staff, prevent skipping past maxWatched
-    if (!completed && !isStaff && newTime > maxWatched) {
-      // Snap to maxWatched
-      player.seekTo(maxWatched);
-      setCurrentTime(maxWatched);
-    } else {
-      player.seekTo(newTime);
-      setCurrentTime(newTime);
-    }
+    player.seekTo(newTime);
+    setCurrentTime(newTime);
   };
 
   const handleSpeedChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -297,6 +315,36 @@ export default function CustomVideoPlayer({
             <div className="text-sm font-mono tracking-wider">
               {formatTime(currentTime)} / {formatTime(duration)}
             </div>
+            
+            {/* Volume Control */}
+            <div 
+              className="flex items-center gap-2 group/volume relative ml-2"
+              onMouseEnter={() => setShowVolumeSlider(true)}
+              onMouseLeave={() => setShowVolumeSlider(false)}
+            >
+              <button onClick={toggleMute} className="hover:text-emerald-400 transition-colors focus:outline-none">
+                {isMuted || volume === 0 ? (
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                ) : volume < 50 ? (
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M5 9v6h4l5 5V4L9 9H5zm7-.17v6.34L9.83 13H7v-2h2.83L12 8.83z"/></svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                )}
+              </button>
+              
+              {/* Slider appears on hover */}
+              <div className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center ${showVolumeSlider ? 'w-20 opacity-100' : 'w-0 opacity-0'}`}>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={isMuted ? 0 : volume}
+                  onChange={handleVolumeChange}
+                  className="w-16 h-1 appearance-none bg-white/30 rounded cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full"
+                />
+              </div>
+            </div>
+
           </div>
           
           <div className="flex items-center gap-4 text-xs font-semibold">
@@ -368,4 +416,12 @@ export default function CustomVideoPlayer({
       </div>
     </div>
   );
-}
+});
+export default CustomVideoPlayer;
+
+
+
+
+
+
+
