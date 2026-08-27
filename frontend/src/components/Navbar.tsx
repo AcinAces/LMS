@@ -235,6 +235,13 @@ export default function Navbar() {
             >
               Blogs
             </Link>
+            <span className="text-slate-600 font-light">|</span>
+            <Link 
+              href="/ide" 
+              className={`px-4 py-2 text-base font-medium rounded-lg transition-all underline underline-offset-[6px] decoration-2 ${isActive('/ide') ? 'bg-white/10 text-emerald-400 decoration-emerald-400/50' : 'text-slate-300 hover:text-white hover:bg-white/5 decoration-slate-500/30 hover:decoration-slate-300/60'}`}
+            >
+              IDE
+            </Link>
           </div>
 
           {/* Right Side (Desktop) & Mobile Toggle */}
@@ -419,6 +426,12 @@ export default function Navbar() {
               className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive('/blogs') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
             >
               Blogs
+            </Link>
+            <Link 
+              href="/ide" 
+              className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive('/ide') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+            >
+              IDE
             </Link>
             
             <div className="h-px bg-white/10 my-2"></div>
