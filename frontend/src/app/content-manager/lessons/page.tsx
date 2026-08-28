@@ -62,6 +62,19 @@ export default function AdminLessonsPage() {
     { key: 'course', label: 'Course', type: 'select', options: courses.map(c => ({ value: c.documentId, label: c.courseTitle })) },
   ];
 
+  const handleFormChange = (newData: any, setFormData: any) => {
+    // If course is selected and it's a new lesson, auto-suggest the lesson number
+    if (newData.course && !editingData?.documentId && newData._lastCourseForOrder !== newData.course) {
+      const courseLessons = lessons.filter(l => l.course?.documentId === newData.course);
+      const takenOrders = courseLessons.map(l => l.order).filter(o => o > 0);
+      let mex = 1;
+      while (takenOrders.includes(mex)) {
+        mex++;
+      }
+      setFormData((prev: any) => ({ ...prev, order: mex, _lastCourseForOrder: newData.course }));
+    }
+  };
+
   const handleSubmit = async (formData: any) => {
     const jwt = localStorage.getItem('jwt');
     const isEditing = !!editingData?.documentId;
@@ -72,12 +85,37 @@ export default function AdminLessonsPage() {
       const url = new URL(videoId.startsWith('http') ? videoId : `https://${videoId}`);
       videoId = url.searchParams.get('v') || url.pathname.split('/').pop() || videoId;
     }
+
+    // Prevent 0 or negative order
+    const requestedOrder = Number(formData.order);
+    if (requestedOrder <= 0) {
+      alert("Lesson number must be greater than 0");
+      throw new Error("Invalid lesson number");
+    }
+
+    // Check if taken
+    const courseLessons = lessons.filter(l => l.course?.documentId === formData.course && l.documentId !== editingData?.documentId);
+    if (courseLessons.some(l => l.order === requestedOrder)) {
+      alert("This Lesson number is already taken in the selected course!");
+      throw new Error("Lesson number taken");
+    }
     
+    // Fetch duration from our next.js proxy
+    let durationInSeconds = 0;
+    try {
+      const durRes = await fetch(`/api/youtube/duration?v=${videoId}`);
+      if (durRes.ok) {
+        const durData = await durRes.json();
+        if (durData.durationInSeconds) durationInSeconds = durData.durationInSeconds;
+      }
+    } catch(e) { console.error(e) }
+
     const payload = {
       data: {
         title: formData.title,
         youtubeVideoId: videoId,
-        order: Number(formData.order),
+        order: requestedOrder,
+        ...(durationInSeconds > 0 ? { durationInSeconds } : {}),
         ...(formData.course ? { course: { connect: [formData.course] } } : {})
       }
     };
@@ -149,6 +187,7 @@ export default function AdminLessonsPage() {
         title={editingData?.documentId ? 'Edit Lesson' : 'Create Lesson'}
         fields={fields}
         initialData={editingData}
+        onChange={handleFormChange}
       />
     </div>
   );

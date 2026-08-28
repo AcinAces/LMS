@@ -23,8 +23,15 @@ export default {
 
   async getSiteStats(ctx: any) {
     try {
-      const studentCount = await strapi.db.query('plugin::users-permissions.user').count();
-      return ctx.send({ studentCount });
+      const studentCount = await strapi.db.query('plugin::users-permissions.user').count({
+        where: {
+          role: {
+            type: 'authenticated'
+          }
+        }
+      });
+      const courseCount = await strapi.db.query('api::course.course').count();
+      return ctx.send({ studentCount, courseCount });
     } catch (err) {
       return ctx.internalServerError('Something went wrong');
     }

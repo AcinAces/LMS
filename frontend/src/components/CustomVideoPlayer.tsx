@@ -8,7 +8,7 @@ interface CustomVideoPlayerProps {
   initialLastWatched: number;
   initialMaxWatched: number;
   isCompleted: boolean;
-  onProgressSync: (lastWatched: number, maxWatched: number, completed: boolean) => void;
+  onProgressSync: (lastWatched: number, maxWatched: number, completed: boolean, duration: number) => void;
   isStaff?: boolean;
 }
 
@@ -138,7 +138,7 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
       }
 
       // Sync with parent every ~5 seconds
-      onProgressSync(time, Math.max(time, maxWatched), completed || (time >= duration - 1));
+      onProgressSync(time, Math.max(time, maxWatched), completed || (time >= duration - 1), duration);
       
     }, 1000);
 

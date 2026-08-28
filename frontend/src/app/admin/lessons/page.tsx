@@ -100,11 +100,22 @@ export default function AdminLessonsPage() {
       throw new Error("Lesson number taken");
     }
     
+    // Fetch duration from our next.js proxy
+    let durationInSeconds = 0;
+    try {
+      const durRes = await fetch(`/api/youtube/duration?v=${videoId}`);
+      if (durRes.ok) {
+        const durData = await durRes.json();
+        if (durData.durationInSeconds) durationInSeconds = durData.durationInSeconds;
+      }
+    } catch(e) { console.error(e) }
+
     const payload = {
       data: {
         title: formData.title,
         youtubeVideoId: videoId,
         order: requestedOrder,
+        ...(durationInSeconds > 0 ? { durationInSeconds } : {}),
         ...(formData.course ? { course: { connect: [formData.course] } } : {})
       }
     };

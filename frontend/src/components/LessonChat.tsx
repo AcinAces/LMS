@@ -34,6 +34,7 @@ export default function LessonChat({ lessonId, courseId, lessonTitle, lessonOrde
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const jwt = typeof window !== 'undefined' ? localStorage.getItem('jwt') : null;
   const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
   const currentUser = userStr ? JSON.parse(userStr) : null;
@@ -125,7 +126,9 @@ export default function LessonChat({ lessonId, courseId, lessonTitle, lessonOrde
   useEffect(() => {
     // If opened, scroll to bottom and mark read
     if (isOpen && messages.length > 0) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      if (chatContainerRef.current) {
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      }
       if (unreadCount > 0) {
         markAsRead(selectedStudentId);
       }
@@ -205,7 +208,7 @@ export default function LessonChat({ lessonId, courseId, lessonTitle, lessonOrde
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto p-4 bg-black/40">
+          <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 bg-black/40">
             {isStaff && !selectedStudentId ? (
               <div className="space-y-2">
                 <p className="text-gray-400 text-sm mb-4">{t('chat.select_student')}</p>

@@ -103,10 +103,30 @@ export default function LessonPage() {
     fetchLessonData();
   }, [params.id, params.lessonId, router]);
 
-  const handleProgressSync = useCallback((lastWatched: number, maxWatched: number, completed: boolean) => {
-    if (isStaff) return; // Do not sync progress for staff
-    
+  const handleProgressSync = useCallback((lastWatched: number, maxWatched: number, completed: boolean, duration: number) => {
     const jwt = localStorage.getItem('jwt');
+    
+    // Check if the lesson is missing duration on the frontend state; if so, update backend!
+    if (duration > 0 && (!currentLesson?.durationInSeconds || currentLesson.durationInSeconds === 0)) {
+      if (jwt) {
+        // Background update, no await
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lessons/${params.lessonId}/duration`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwt}`
+          },
+          body: JSON.stringify({ durationInSeconds: Math.floor(duration) })
+        }).catch(console.error);
+      }
+      
+      // Optimitiscally update local state so we don't spam the endpoint
+      if (currentLesson) {
+        setCurrentLesson({ ...currentLesson, durationInSeconds: Math.floor(duration) });
+      }
+    }
+
+    if (isStaff) return; // Do not sync progress for staff
     if (!jwt) return;
 
     // Throttle the sync to avoid API spam (e.g., sync every 5 seconds or if completion status changes)
@@ -147,7 +167,7 @@ export default function LessonPage() {
       // Otherwise debounce for 5 seconds
       syncTimeoutRef.current = setTimeout(syncToBackend, 5000);
     }
-  }, [params.lessonId, isStaff]);
+  }, [params.lessonId, isStaff, currentLesson]);
 
   const markLessonComplete = async () => {
     const jwt = localStorage.getItem('jwt');

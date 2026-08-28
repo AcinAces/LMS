@@ -213,7 +213,7 @@ export default async function Home() {
             </p>
           </div>
           
-          <StatCounters courseCount={featuredCourses.length} studentCount={studentCount} />
+          <StatCounters courseCount={siteStats.courseCount || 0} studentCount={studentCount} />
         </div>
       </section>
     </div>

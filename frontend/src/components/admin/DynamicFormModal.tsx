@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 export type FormField = {
   key: string;
@@ -41,6 +42,9 @@ export default function DynamicFormModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (isOpen) {
       setFormData(initialData || {});
@@ -48,7 +52,7 @@ export default function DynamicFormModal({
     }
   }, [isOpen, initialData]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,8 +68,8 @@ export default function DynamicFormModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <form onSubmit={handleSubmit} className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-xl shadow-2xl relative flex flex-col max-h-[90vh]">
         <div className="p-6 border-b border-white/10 flex justify-between items-center shrink-0">
           <h2 className="text-xl font-bold text-white">{title}</h2>
@@ -148,6 +152,7 @@ export default function DynamicFormModal({
           </button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body
   );
 }

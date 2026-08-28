@@ -60,5 +60,28 @@ export default factories.createCoreController('api::lesson.lesson', ({ strapi })
     }
 
     return super.delete(ctx);
+  },
+
+  async updateDuration(ctx) {
+    try {
+      const documentId = ctx.params.id;
+      const { durationInSeconds } = ctx.request.body;
+      
+      if (!durationInSeconds) return ctx.badRequest('durationInSeconds is required');
+      
+      const lesson = await strapi.documents('api::lesson.lesson').findOne({ documentId });
+      if (!lesson) return ctx.notFound('Lesson not found');
+      
+      // Only update if it doesn't have a duration already (to prevent abuse)
+      if (!lesson.durationInSeconds || lesson.durationInSeconds === 0) {
+        await strapi.documents('api::lesson.lesson').update({
+          documentId,
+          data: { durationInSeconds }
+        });
+      }
+      return ctx.send({ ok: true });
+    } catch (err) {
+      return ctx.internalServerError('Failed to update duration');
+    }
   }
 }));

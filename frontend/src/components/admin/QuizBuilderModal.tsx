@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface QuizBuilderModalProps {
   isOpen: boolean;
@@ -13,6 +14,9 @@ interface QuizBuilderModalProps {
 export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses, initialData }: QuizBuilderModalProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => setMounted(true), []);
   const [fetching, setFetching] = useState(false);
 
   // Step 1 Data
@@ -244,10 +248,10 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses, 
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
       <div className="bg-gray-900 border border-white/10 rounded-xl w-full max-w-4xl max-h-[90vh] shadow-2xl relative flex flex-col">
         <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gray-900 rounded-t-xl flex-shrink-0">
           <h2 className="text-xl font-bold text-white">
@@ -394,6 +398,7 @@ export default function QuizBuilderModal({ isOpen, onClose, onSuccess, courses, 
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
