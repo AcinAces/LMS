@@ -2,7 +2,7 @@
   "nav": {
     "courses": "সব কোর্স",
     "blogs": "ব্লগ",
-    "ide": "আইডিই (IDE)",
+    "ide": "আইডিই",
     "admin": "অ্যাডমিন",
     "manager": "ম্যানেজার",
     "instructor": "ইন্সট্রাক্টর",
@@ -41,8 +41,8 @@
     "all_rights_reserved": "আসিনের এলএমএস (Acin's LMS)। সর্বস্বত্ব সংরক্ষিত।"
   },
   "home": {
-    "title_part1": "আপনার পরবর্তী ",
-    "title_highlight": "গিট কমিট",
+    "title_part1": "আপনার প্রথম ",
+    "title_highlight": "অ্যাকসেপ্টেড সলিউশন",
     "title_part2": " এখান থেকেই শুরু",
     "subtitle": "আমরা কোডিং শেখাই। আপনার বাগের দায়িত্ব আপনাকেই নিতে হবে।",
     "featured_courses_btn": "ফিচার্ড কোর্স",

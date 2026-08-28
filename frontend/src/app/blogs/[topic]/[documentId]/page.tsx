@@ -18,7 +18,7 @@ async function getBlog(documentId: string) {
 
 export default async function BlogPostPage({ params }: { params: Promise<{ topic: string, documentId: string }> }) {
   const cookieStore = await cookies();
-  const locale = (cookieStore.get('NEXT_LOCALE')?.value as Locale) || 'en';
+  const locale = (cookieStore.get('NEXT_LOCALE')?.value as Locale) || 'bn';
   const dict = await getDictionary(locale);
   const resolvedParams = await params;
   const decodedTopic = decodeURIComponent(resolvedParams.topic);

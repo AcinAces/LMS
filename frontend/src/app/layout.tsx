@@ -35,7 +35,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const cookieStore = await cookies();
-  const locale = (cookieStore.get("NEXT_LOCALE")?.value as Locale) || "en";
+  const locale = (cookieStore.get("NEXT_LOCALE")?.value as Locale) || "bn";
   const dict = await getDictionary(locale);
 
   const activeFont = locale === 'bn' ? hindSiliguri.variable : geistSans.variable;

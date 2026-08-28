@@ -1,4 +1,4 @@
-﻿{
+{
   "kind": "collectionType",
   "collectionName": "lesson_messages",
   "info": {
@@ -23,8 +23,7 @@
     "lesson": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::lesson.lesson",
-      
+      "target": "api::lesson.lesson"
     },
     "student": {
       "type": "relation",
@@ -38,4 +37,3 @@
     }
   }
 }
-

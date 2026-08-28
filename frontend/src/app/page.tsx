@@ -33,7 +33,7 @@ async function getSiteStats() {
 
 export default async function Home() {
   const cookieStore = await cookies();
-  const locale = (cookieStore.get('NEXT_LOCALE')?.value as Locale) || 'en';
+  const locale = (cookieStore.get('NEXT_LOCALE')?.value as Locale) || 'bn';
   const dict = await getDictionary(locale);
   const featuredCourses = await getFeaturedCourses();
   const siteStats = await getSiteStats();
@@ -49,7 +49,7 @@ export default async function Home() {
         {/* Glow orb */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/20 blur-[120px] rounded-full pointer-events-none" />
 
-        <div className="relative z-10 max-w-4xl mx-auto text-center px-4 mt-20 animate-fade-in-up">
+        <div className="relative z-10 max-w-5xl mx-auto text-center px-4 mt-20 animate-fade-in-up">
             <div className="flex justify-center mb-8">
               <svg width="400" height="100" viewBox="0 0 400 100" className="drop-shadow-[0_0_35px_rgba(52,211,153,0.4)] hover:scale-105 transition-transform duration-300">
                 <defs>
@@ -98,12 +98,26 @@ export default async function Home() {
               </svg>
             </div>
             <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 text-white leading-tight">
-              {dict.home.title_part1}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-500">
-                {dict.home.title_highlight}
-              </span>
-              <br className="hidden md:block" />
-              {dict.home.title_part2}
+              {locale === 'en' ? (
+                <>
+                  {dict.home.title_part1}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-500 whitespace-nowrap">
+                    {dict.home.title_highlight}
+                  </span>
+                  <br />
+                  {dict.home.title_part2}
+                </>
+              ) : (
+                <>
+                  {dict.home.title_part1}
+                  <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-500">
+                    {dict.home.title_highlight}
+                  </span>
+                  <br />
+                  {dict.home.title_part2}
+                </>
+              )}
             </h1>
             
             <p className="text-lg md:text-2xl text-slate-300 mb-12 max-w-2xl mx-auto font-light leading-relaxed">

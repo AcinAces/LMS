@@ -32,7 +32,7 @@ const borderColors = [
 
 export default async function BlogsPage() {
   const cookieStore = await cookies();
-  const locale = (cookieStore.get('NEXT_LOCALE')?.value as Locale) || 'en';
+  const locale = (cookieStore.get('NEXT_LOCALE')?.value as Locale) || 'bn';
   const dict = await getDictionary(locale);
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-950 text-slate-100 pt-12 px-4 sm:px-6 lg:px-8 pb-20">

@@ -53,6 +53,14 @@
       "relation": "oneToMany",
       "target": "api::review.review",
       "mappedBy": "course"
+    },
+    "courseType": {
+      "type": "enumeration",
+      "enum": [
+        "Theory",
+        "Contest"
+      ],
+      "default": "Theory"
     }
   }
 }

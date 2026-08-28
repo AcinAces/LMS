@@ -495,6 +495,8 @@ export interface ApiCourseCourse extends Struct.CollectionTypeSchema {
     courseDescription: Schema.Attribute.RichText;
     courseTag: Schema.Attribute.String;
     courseTitle: Schema.Attribute.String;
+    courseType: Schema.Attribute.Enumeration<['Theory', 'Contest']> &
+      Schema.Attribute.DefaultTo<'Theory'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
