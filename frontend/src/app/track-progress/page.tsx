@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/i18n/LanguageContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AnimatedBackground from '@/components/AnimatedBackground';
@@ -23,6 +24,7 @@ interface QuizAttempt {
 }
 
 export default function TrackProgressPage() {
+  const { t } = useLanguage();
   const [courses, setCourses] = useState<CourseStat[]>([]);
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,7 +129,7 @@ export default function TrackProgressPage() {
     <div className="relative min-h-[calc(100vh-4rem)] pt-16">
       <AnimatedBackground />
       <div className="relative z-10 max-w-5xl mx-auto px-6 py-12">
-        <h1 className="text-4xl font-extrabold text-white mb-10 text-center">Your Progress Report</h1>
+        <h1 className="text-4xl font-extrabold text-white mb-10 text-center">{t('dashboard.progress_report')}</h1>
         
         {loading ? (
           <div className="flex justify-center py-20">
@@ -140,12 +142,12 @@ export default function TrackProgressPage() {
             <section>
               <h2 className="text-2xl font-bold text-emerald-400 mb-6 flex items-center gap-2">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                Course Completion
+                {t('dashboard.course_completion')}
               </h2>
               
               {courses.length === 0 ? (
                 <div className="bg-black/40 border border-white/10 rounded-xl p-8 text-center text-gray-400">
-                  You are not enrolled in any courses yet.
+                  {t('dashboard.not_enrolled')}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -168,9 +170,9 @@ export default function TrackProgressPage() {
                         </div>
                         
                         <div className="flex justify-between text-sm text-gray-400">
-                          <span>{course.completedLessons} / {course.totalLessons} Lessons Completed</span>
+                          <span>{course.completedLessons} / {course.totalLessons} {t('dashboard.lessons_label')} {t('dashboard.completed')}</span>
                           <Link href={`/courses/${course.documentId}`} className="text-blue-400 hover:text-blue-300 font-medium">
-                            Select &rarr;
+                            {t('dashboard.select')} &rarr;
                           </Link>
                         </div>
                       </div>
@@ -184,12 +186,12 @@ export default function TrackProgressPage() {
             <section>
               <h2 className="text-2xl font-bold text-emerald-400 mb-6 flex items-center gap-2">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                Quiz Performances
+                {t('dashboard.quiz_performances')}
               </h2>
               
               {quizAttempts.length === 0 ? (
                 <div className="bg-black/40 border border-white/10 rounded-xl p-8 text-center text-gray-400">
-                  You haven't taken any quizzes yet.
+                  {t('dashboard.no_quizzes_taken')}
                 </div>
               ) : (
                 <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-lg">
@@ -197,11 +199,11 @@ export default function TrackProgressPage() {
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-white/5 border-b border-white/10">
-                          <th className="p-4 text-sm font-semibold text-gray-300">Quiz</th>
-                          <th className="p-4 text-sm font-semibold text-gray-300 hidden md:table-cell">Course</th>
-                          <th className="p-4 text-sm font-semibold text-gray-300 text-center">Score</th>
-                          <th className="p-4 text-sm font-semibold text-gray-300 text-center">Percentage</th>
-                          <th className="p-4 text-sm font-semibold text-gray-300 text-right">Date</th>
+                          <th className="p-4 text-sm font-semibold text-gray-300">{t('dashboard.quiz_header')}</th>
+                          <th className="p-4 text-sm font-semibold text-gray-300 hidden md:table-cell">{t('dashboard.course_header')}</th>
+                          <th className="p-4 text-sm font-semibold text-gray-300 text-center">{t('dashboard.score_header')}</th>
+                          <th className="p-4 text-sm font-semibold text-gray-300 text-center">{t('dashboard.percentage_header')}</th>
+                          <th className="p-4 text-sm font-semibold text-gray-300 text-right">{t('dashboard.date_header')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -241,3 +243,6 @@ export default function TrackProgressPage() {
     </div>
   );
 }
+
+
+

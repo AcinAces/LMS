@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 function AnimatedCounter({ targetCount, duration = 1500 }: { targetCount: number, duration?: number }) {
   const [count, setCount] = useState(0);
@@ -33,6 +34,7 @@ function AnimatedCounter({ targetCount, duration = 1500 }: { targetCount: number
 }
 
 export default function StatCounters({ courseCount, studentCount }: { courseCount: number, studentCount: number }) {
+  const { t } = useLanguage();
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
       <div className="bg-slate-900/40 border border-white/5 backdrop-blur-xl rounded-3xl p-10 flex flex-col items-center justify-center text-center group hover:bg-slate-900/60 transition-all hover:border-emerald-500/20">
@@ -42,7 +44,7 @@ export default function StatCounters({ courseCount, studentCount }: { courseCoun
         <div className="text-5xl font-black text-white mb-2">
           <AnimatedCounter targetCount={courseCount} />
         </div>
-        <div className="text-slate-400 font-medium tracking-wide uppercase text-sm">Course Count</div>
+        <div className="text-slate-400 font-medium tracking-wide uppercase text-sm">{t('stats.course_count')}</div>
       </div>
       
       <div className="bg-slate-900/40 border border-white/5 backdrop-blur-xl rounded-3xl p-10 flex flex-col items-center justify-center text-center group hover:bg-slate-900/60 transition-all hover:border-emerald-500/20">
@@ -52,7 +54,7 @@ export default function StatCounters({ courseCount, studentCount }: { courseCoun
         <div className="text-5xl font-black text-white mb-2">
           <AnimatedCounter targetCount={studentCount} />
         </div>
-        <div className="text-slate-400 font-medium tracking-wide uppercase text-sm">Student Count</div>
+        <div className="text-slate-400 font-medium tracking-wide uppercase text-sm">{t('stats.student_count')}</div>
       </div>
     </div>
   );

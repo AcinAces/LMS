@@ -7,6 +7,7 @@ import AnimatedBackground from '@/components/AnimatedBackground';
 import CustomVideoPlayer from '@/components/CustomVideoPlayer';
 import LessonChat from '@/components/LessonChat';
 import ReactMarkdown from 'react-markdown';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface Lesson {
   id: number;
@@ -30,6 +31,7 @@ interface Course {
 export default function LessonPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useLanguage();
   
   const [course, setCourse] = useState<Course | null>(null);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
@@ -185,7 +187,7 @@ export default function LessonPage() {
     return (
       <div className="min-h-screen flex items-center justify-center pt-16 text-white">
         <AnimatedBackground />
-        <h1 className="relative z-10 text-2xl">Lesson not found.</h1>
+        <h1 className="relative z-10 text-2xl">{t('lesson.lesson_not_found')}</h1>
       </div>
     );
   }
@@ -212,7 +214,7 @@ export default function LessonPage() {
         <div className="mb-6">
           <Link href={`/courses/${course.documentId}`} className="text-emerald-400 hover:text-emerald-300 text-sm font-semibold flex items-center gap-2 inline-flex">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-            Back to {course.courseTitle}
+            {t('lesson.back_to')} {course.courseTitle}
           </Link>
         </div>
 
@@ -236,7 +238,7 @@ export default function LessonPage() {
               </div>
             ) : (
               <div className="w-full aspect-video bg-black rounded-xl border border-white/10 flex items-center justify-center">
-                <span className="text-gray-500">Video unavailable</span>
+                <span className="text-gray-500">{t('lesson.no_video')}</span>
               </div>
             )}
 
@@ -247,7 +249,7 @@ export default function LessonPage() {
                   href={`/courses/${course.documentId}/lesson/${prevLesson.documentId}`}
                   className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-lg transition-colors border border-white/10"
                 >
-                  &larr; Previous Lesson
+                  &larr; {t('lesson.previous')}
                 </Link>
               ) : <div></div>}
               
@@ -256,7 +258,7 @@ export default function LessonPage() {
                   href={`/courses/${course.documentId}/lesson/${nextLesson.documentId}`}
                   className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-500/20 transition-all"
                 >
-                  Next Lesson &rarr;
+                  {t('lesson.next')} &rarr;
                 </Link>
               ) : (
                 <Link
@@ -282,7 +284,7 @@ export default function LessonPage() {
               {!isStaff && (
                 <div className="mb-8">
                   <div className="flex justify-between items-end mb-2">
-                    <span className="text-sm font-semibold text-gray-300">Course Progress</span>
+                    <span className="text-sm font-semibold text-gray-300">{t('lesson.course_progress')}</span>
                     <span className="text-emerald-400 font-bold text-lg leading-none">{completionPercentage}%</span>
                   </div>
                   <div className="w-full h-2.5 bg-gray-800 rounded-full overflow-hidden mb-2 border border-white/5">
@@ -294,7 +296,7 @@ export default function LessonPage() {
                     </div>
                   </div>
                   <div className="text-xs text-center text-gray-400 font-medium">
-                    {completedLessons} / {totalLessons} lessons completed
+                    {completedLessons} / {totalLessons} {t('lesson.completed')}
                   </div>
                 </div>
               )}

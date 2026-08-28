@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/i18n/LanguageContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AnimatedBackground from '@/components/AnimatedBackground';
@@ -18,6 +19,7 @@ interface Course {
 }
 
 export default function MyCoursesPage() {
+  const { t } = useLanguage();
   const [courses, setCourses] = useState<Course[]>([]);
   const [progresses, setProgresses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,14 +94,14 @@ export default function MyCoursesPage() {
       <AnimatedBackground />
       <div className="relative z-10 max-w-5xl mx-auto px-6 py-12">
         <div className="flex flex-col items-center mb-16 animate-fade-in-up">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">My Courses</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">{t("dashboard.my_courses")}</h1>
           <div className="w-full max-w-2xl relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <svg className="w-5 h-5 text-slate-400 group-focus-within:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
             <input 
               type="text"
-              placeholder="Search my courses..."
+              placeholder={t("dashboard.search_my_courses")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-4 bg-slate-900/60 border border-white/10 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all backdrop-blur-xl shadow-lg"
@@ -111,9 +113,9 @@ export default function MyCoursesPage() {
           <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div></div>
         ) : filteredCourses.length === 0 ? (
           <div className="text-center p-12 bg-white/5 border border-white/10 rounded-xl">
-            <p className="text-gray-400 mb-6">You are not enrolled in any courses yet, or no courses match your search.</p>
+            <p className="text-gray-400 mb-6">{t("dashboard.no_courses")}</p>
             <Link href="/courses" className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-colors">
-              Browse Courses
+              {t('dashboard.browse_courses')}
             </Link>
           </div>
         ) : (
@@ -126,10 +128,10 @@ export default function MyCoursesPage() {
                   <div key={course.id} className="bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-6 hover:border-emerald-500/50 transition-all group flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex-1">
                       <div className="flex flex-wrap gap-2 mb-3">
-                        {course.courseTag ? course.courseTag.split(',').map((t, i) => (
-                          <span key={i} className="px-2 py-1 bg-black/50 backdrop-blur-md text-emerald-400 text-xs font-semibold rounded border border-emerald-500/20">{t.trim()}</span>
+                        {course.courseTag ? course.courseTag.split(',').map((tag, i) => (
+                          <span key={i} className="px-2 py-1 bg-black/50 backdrop-blur-md text-emerald-400 text-xs font-semibold rounded border border-emerald-500/20">{tag.trim()}</span>
                         )) : (
-                          <span className="px-2 py-1 bg-black/50 backdrop-blur-md text-emerald-400 text-xs font-semibold rounded border border-emerald-500/20">General</span>
+                          <span className="px-2 py-1 bg-black/50 backdrop-blur-md text-emerald-400 text-xs font-semibold rounded border border-emerald-500/20">{t('home.general')}</span>
                         )}
                       </div>
                       
@@ -141,11 +143,11 @@ export default function MyCoursesPage() {
                         <div className="flex items-center gap-4 text-sm text-gray-400">
                           <p className="flex items-center gap-1.5">
                             <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                            By {course.courseAuthor?.username || 'LMS'}
+                            {t('home.by')} {course.courseAuthor?.username || 'LMS'}
                           </p>
                           <p className="flex items-center gap-1.5">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                            {course.lessons?.length || 0} Lessons
+                            {course.lessons?.length || 0} {t('dashboard.lessons_label')}
                           </p>
                         </div>
 
@@ -153,7 +155,7 @@ export default function MyCoursesPage() {
                           <div className="flex items-center flex-wrap gap-3 mt-1">
                             <div className="flex items-center gap-1.5 text-emerald-400 text-sm font-bold bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                              COMPLETED
+                              {t('review.completed')}
                             </div>
                             
                             {!userReview ? (
@@ -161,11 +163,11 @@ export default function MyCoursesPage() {
                                 onClick={() => setReviewingCourse(course)} 
                                 className="cursor-pointer px-4 py-1.5 rounded-lg text-sm font-bold text-white shadow-sm shadow-emerald-500/5 animate-gradient-wave bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 hover:scale-105 transition-all"
                               >
-                                Share your feedback
+                                {t('dashboard.share_feedback')}
                               </button>
                             ) : (
                               <span className="text-gray-400 text-sm bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
-                                Rated: <strong className="text-emerald-400">{Number(userReview.overallRating).toFixed(2)}/5</strong>
+                                {t('review.rated')} <strong className="text-emerald-400">{Number(userReview.overallRating).toFixed(2)}/5</strong>
                               </span>
                             )}
                           </div>
@@ -174,7 +176,7 @@ export default function MyCoursesPage() {
                     </div>
                     <div className="flex-shrink-0 flex items-center justify-center">
                       <Link href={`/courses/${course.documentId}`} className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2">
-                        Select <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                        {t('dashboard.select')} <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
                       </Link>
                     </div>
                   </div>
@@ -198,6 +200,7 @@ export default function MyCoursesPage() {
     </div>
   );
 }
+
 
 
 

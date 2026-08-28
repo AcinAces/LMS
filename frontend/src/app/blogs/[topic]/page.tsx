@@ -1,4 +1,6 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
+import { cookies } from 'next/headers';
+import { getDictionary, Locale } from '@/i18n/dictionaries';
 
 export const revalidate = 0;
 
@@ -23,6 +25,9 @@ async function getTopicBlogs(topic: string) {
 }
 
 export default async function TopicPage({ params }: { params: Promise<{ topic: string }> }) {
+  const cookieStore = await cookies();
+  const locale = (cookieStore.get('NEXT_LOCALE')?.value as Locale) || 'en';
+  const dict = await getDictionary(locale);
   const resolvedParams = await params;
   const decodedTopic = decodeURIComponent(resolvedParams.topic);
   
@@ -40,7 +45,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
         
         <Link href="/blogs" className="group inline-flex items-center gap-2 text-slate-400 hover:text-emerald-400 transition-colors mb-8 text-sm font-medium bg-slate-900/50 px-4 py-2 rounded-full border border-white/5 hover:border-emerald-500/30">
           <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-          Back to Library
+          {dict.blogs.back_to_library}
         </Link>
         
         <div className="mb-12 border-b border-white/10 pb-8 relative">
@@ -50,7 +55,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
 
         {allSubtopics.length === 0 ? (
           <div className="text-slate-400 py-10 bg-slate-900/50 rounded-2xl border border-white/5 p-8 text-center">
-            No predefined subtopics found for this topic.
+            {dict.blogs.no_subtopics}
           </div>
         ) : (
           <div className="space-y-8 animate-fade-in-up delay-100">
@@ -89,3 +94,4 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
     </div>
   );
 }
+

@@ -1,13 +1,15 @@
-﻿'use client';
+'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import Link from 'next/link';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 export default function CourseQuizzesPage() {
   const params = useParams();
   const router = useRouter();
   const courseId = params.id as string;
+  const { t } = useLanguage();
   
   const [quizzes, setQuizzes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,10 +50,10 @@ export default function CourseQuizzesPage() {
       <div className="max-w-5xl mx-auto relative z-10">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
-            Course Quizzes
+            {t('quiz.available_quizzes')}
           </h1>
           <Link href={`/courses/${courseId}`} className="text-gray-400 hover:text-white transition-colors">
-            ← Back to Course
+            ← {t('quiz.back_to_course')}
           </Link>
         </div>
 
@@ -73,7 +75,7 @@ export default function CourseQuizzesPage() {
 
         {quizzes.length === 0 ? (
           <div className="text-center text-gray-400 py-12 bg-black/40 rounded-xl border border-white/10">
-            No quizzes are available for this course yet.
+            {t('quiz.no_quizzes')}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -89,7 +91,7 @@ export default function CourseQuizzesPage() {
                 <div className="grid grid-cols-3 gap-4 mb-6">
                   <div className="bg-black/40 rounded-lg p-3 text-center border border-white/5">
                     <div className="text-emerald-500 font-bold text-xl">{quiz.totalQuestion}</div>
-                    <div className="text-xs text-gray-400 uppercase tracking-wider">Questions</div>
+                    <div className="text-xs text-gray-400 uppercase tracking-wider">{t('quiz.questions')}</div>
                   </div>
                   <div className="bg-black/40 rounded-lg p-3 text-center border border-white/5">
                     <div className="text-blue-500 font-bold text-xl">{quiz.totalQuestion}</div>
@@ -105,7 +107,7 @@ export default function CourseQuizzesPage() {
                   onClick={() => setSelectedQuiz(quiz)}
                   className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold transition-all shadow-lg shadow-emerald-500/20"
                 >
-                  Start Quiz
+                  {t('quiz.start_quiz')}
                 </button>
               </div>
             ))}

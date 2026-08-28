@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/i18n/LanguageContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AnimatedBackground from '@/components/AnimatedBackground';
@@ -18,6 +19,7 @@ interface Course {
 }
 
 export default function CoursesPage() {
+  const { t } = useLanguage();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -90,7 +92,7 @@ export default function CoursesPage() {
       <div className="relative z-10 max-w-5xl mx-auto px-6 py-12">
         
         <div className="flex flex-col items-center mb-16 animate-fade-in-up">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">Available Courses</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">{t('courses.available_courses')}</h1>
           
           <div className="w-full max-w-3xl flex flex-col md:flex-row gap-4 relative">
             <div className="relative group flex-grow">
@@ -99,7 +101,7 @@ export default function CoursesPage() {
               </div>
               <input 
                 type="text"
-                placeholder="Search courses by title or tag..."
+                placeholder={t('courses.search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-12 pr-4 py-4 bg-slate-900/60 border border-white/10 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all backdrop-blur-xl shadow-lg"
@@ -115,10 +117,10 @@ export default function CoursesPage() {
                 onChange={(e) => setSortOption(e.target.value)}
                 className="w-full pl-11 pr-10 py-4 appearance-none bg-slate-900/60 border border-white/10 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all backdrop-blur-xl shadow-lg cursor-pointer"
               >
-                <option value="newest" className="bg-slate-900">Newest First</option>
-                <option value="oldest" className="bg-slate-900">Oldest First</option>
-                <option value="a-z" className="bg-slate-900">Title (A-Z)</option>
-                <option value="z-a" className="bg-slate-900">Title (Z-A)</option>
+                <option value="newest" className="bg-slate-900">{t('courses.newest_first')}</option>
+                <option value="oldest" className="bg-slate-900">{t('courses.oldest_first')}</option>
+                <option value="a-z" className="bg-slate-900">{t('courses.title_az')}</option>
+                <option value="z-a" className="bg-slate-900">{t('courses.title_za')}</option>
               </select>
               <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                 <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -133,7 +135,7 @@ export default function CoursesPage() {
           </div>
         ) : filteredCourses.length === 0 ? (
           <div className="text-center p-12 bg-slate-900/50 backdrop-blur-xl border border-white/5 rounded-2xl animate-fade-in-up delay-100">
-            <p className="text-slate-400 text-lg">No courses found matching your criteria.</p>
+            <p className="text-slate-400 text-lg">{t('courses.no_courses')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up delay-100">
@@ -148,10 +150,10 @@ export default function CoursesPage() {
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                       <div className="flex flex-wrap gap-2">
-                        {course.courseTag ? course.courseTag.split(',').map((t, i) => (
-                          <span key={i} className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-md border border-emerald-500/20">{t.trim()}</span>
+                        {course.courseTag ? course.courseTag.split(',').map((tag, i) => (
+                          <span key={i} className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-md border border-emerald-500/20">{tag.trim()}</span>
                         )) : (
-                          <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-md border border-emerald-500/20">General</span>
+                          <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-md border border-emerald-500/20">{t('home.general')}</span>
                         )}
 </div>
                       {hasReviews && (
@@ -169,14 +171,14 @@ export default function CoursesPage() {
                     <div className="flex items-center gap-4 text-sm text-slate-400 mb-6">
                       <div className="flex items-center gap-1.5">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                        By {course.courseAuthor?.username || 'LMS'}
+                        {t('home.by')} {course.courseAuthor?.username || 'LMS'}
                       </div>
                       <div className="flex items-center gap-1.5">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                        {course.lessons?.length || 0} Lessons
+                        {course.lessons?.length || 0} {t('home.lessons')}
                       </div>
                       {isEnrolled && (
-                        <span className="px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-bold rounded-md border border-blue-500/20">Enrolled</span>
+                        <span className="px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-bold rounded-md border border-blue-500/20">{t('courses.enrolled')}</span>
                       )}
                     </div>
                   </div>
@@ -184,15 +186,15 @@ export default function CoursesPage() {
                   <div className="pt-4 border-t border-white/5 mt-auto">
                     {!userId ? (
                       <Link href={`/courses/${course.documentId}`} className="w-full py-3 flex justify-center items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold rounded-xl transition-colors">
-                        View details
+                        {t('courses.view_details')}
                       </Link>
                     ) : isEnrolled ? (
                       <Link href={`/courses/${course.documentId}`} className="w-full py-3 flex justify-center items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-sm font-bold rounded-xl transition-colors">
-                        Select <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                        {t('courses.select')} <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
                       </Link>
                     ) : (
                       <Link href={`/courses/${course.documentId}`} className="w-full py-3 flex justify-center items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(16,185,129,0.4)] transition-all">
-                        View course
+                        {t('courses.view_course')}
                       </Link>
                     )}
                   </div>
@@ -214,6 +216,7 @@ export default function CoursesPage() {
     </div>
   );
 }
+
 
 
 

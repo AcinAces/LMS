@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -6,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import AnimatedBackground from '@/components/AnimatedBackground';
 
 export default function LoginPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,7 +44,7 @@ export default function LoginPage() {
 
       if (!res.ok) {
         // Strapi returns an error object if auth fails
-        setError("Email or password didn't match or not found.");
+        setError(t('auth.login_error'));
         setLoading(false);
         return;
       }
@@ -73,7 +75,7 @@ export default function LoginPage() {
       }
       
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
+      setError(t('auth.unexpected_error'));
       setLoading(false);
     }
   };
@@ -87,7 +89,7 @@ export default function LoginPage() {
           <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2">
             Acin's LMS
           </h1>
-          <p className="text-gray-400 text-sm">Sign in to your account to continue</p>
+          <p className="text-gray-400 text-sm">{t('auth.sign_in_to_continue')}</p>
         </div>
 
         {error && (
@@ -98,7 +100,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t('auth.email')}</label>
             <input 
               type="email" 
               required
@@ -111,13 +113,13 @@ export default function LoginPage() {
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-300">Password</label>
+              <label className="block text-sm font-medium text-gray-300">{t('auth.password')}</label>
               <button type="button" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
-                Forgot password?
+                {t('auth.forgot_password')}
               </button>
             </div>
             <p className="text-xs text-amber-500/80 mb-2 italic">
-              * Note: No password requirements temporarily
+              {t('auth.password_note')}
             </p>
             <input 
               type="password" 
@@ -134,15 +136,15 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white rounded-lg font-semibold transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-blue-500/20 flex justify-center items-center"
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? t('auth.signing_in') : t('auth.sign_in')}
           </button>
         </form>
 
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-400">
-            Don't have an account?{' '}
+            {t('auth.no_account')}{' '}
             <Link href="/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
-              Sign up
+              {t('auth.sign_up_link')}
             </Link>
           </p>
         </div>
@@ -150,3 +152,6 @@ export default function LoginPage() {
     </div>
   );
 }
+
+
+

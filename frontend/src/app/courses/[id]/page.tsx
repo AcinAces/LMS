@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import ReactMarkdown from 'react-markdown';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface LessonProgress {
   completed: boolean;
@@ -33,6 +34,7 @@ interface Course {
 export default function CourseDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useLanguage();
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<number | null>(null);
@@ -170,7 +172,7 @@ export default function CourseDetailsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center pt-16 text-white">
         <AnimatedBackground />
-        <h1 className="relative z-10 text-2xl">Course not found.</h1>
+        <h1 className="relative z-10 text-2xl">{t('course_detail.course_not_found')}</h1>
       </div>
     );
   }
@@ -194,7 +196,7 @@ export default function CourseDetailsPage() {
       <div className="relative z-10 max-w-4xl mx-auto px-6 py-12">
         <Link href="/courses" className="text-emerald-400 hover:text-emerald-300 text-sm font-semibold flex items-center gap-2 mb-8 inline-flex">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-          Back to Courses
+          {t('course_detail.back_to_courses')}
         </Link>
         
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-10">
@@ -202,7 +204,7 @@ export default function CourseDetailsPage() {
             <h1 className="text-4xl font-extrabold text-white mb-2">{course.courseTitle}</h1>
             <p className="text-gray-400 flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-              By {course.courseAuthor?.username || 'LMS'}
+              {t('course_detail.by')} {course.courseAuthor?.username || 'LMS'}
             </p>
           </div>
           
@@ -211,10 +213,10 @@ export default function CourseDetailsPage() {
               {isStaff ? (
                 <button 
                   disabled
-                  title="Staff cannot enroll in courses"
+                  title={t('course_detail.staff_tooltip')}
                   className="px-8 py-3 bg-white/5 border border-white/10 text-gray-500 text-sm font-bold rounded-lg flex items-center gap-2 cursor-not-allowed"
                 >
-                  Enrollment Disabled for Staff
+                  {t('course_detail.enrollment_disabled')}
                 </button>
               ) : localEnrolled ? (
                 <div className="flex flex-col items-center gap-2">
@@ -222,7 +224,7 @@ export default function CourseDetailsPage() {
                     disabled
                     className="w-full px-8 py-3 bg-white/10 border border-white/20 text-gray-400 text-sm font-bold rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
                   >
-                    Enrolled 
+                    {t('course_detail.enrolled')} 
                     <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
                   </button>
                   {totalQuizzes > 0 && (
@@ -231,7 +233,7 @@ export default function CourseDetailsPage() {
                         href={`/courses/${course.documentId}/quizzes`}
                         className="w-full px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
                       >
-                        {takenQuizzes >= totalQuizzes ? 'Retake Quiz' : 'Take a Quiz'}
+                        {takenQuizzes >= totalQuizzes ? t('course_detail.retake_quiz') : t('course_detail.take_quiz')}
                       </Link>
                       {takenQuizzes >= totalQuizzes ? (
                         <div className="mt-2 text-xs font-semibold text-emerald-400 flex items-center gap-1">
@@ -240,7 +242,7 @@ export default function CourseDetailsPage() {
                         </div>
                       ) : (
                         <div className="mt-2 text-xs font-semibold text-gray-400">
-                          {takenQuizzes}/{totalQuizzes} Quizzes Taken
+                          {takenQuizzes}/{totalQuizzes} {t('course_detail.quizzes_taken')}
                         </div>
                       )}
                     </div>
@@ -252,7 +254,7 @@ export default function CourseDetailsPage() {
                   disabled={enrolling}
                   className={`px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2 ${enrolling ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  {enrolling ? 'Enrolling...' : 'Enroll Now'}
+                  {enrolling ? t('course_detail.enrolling') : t('course_detail.enroll_now')}
                   {!enrolling && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>}
                 </button>
               )}
@@ -267,30 +269,30 @@ export default function CourseDetailsPage() {
         )}
 
         <div className="space-y-4">
-          <h3 className="text-2xl font-bold text-white mb-6">Course Lessons</h3>
+          <h3 className="text-2xl font-bold text-white mb-6">{t('course_detail.course_lessons')}</h3>
           
           {!course.lessons || course.lessons.length === 0 ? (
-            <p className="text-gray-400">No lessons available for this course yet.</p>
+            <p className="text-gray-400">{t('course_detail.no_lessons')}</p>
           ) : (
             course.lessons.map((lesson, idx) => {
               const progress = allProgress.find(p => p.lesson?.documentId === lesson.documentId);
               
-              let statusText = 'Start';
+              let statusText = t('course_detail.start');
               let buttonStyle = 'bg-emerald-600 hover:bg-emerald-500 text-white';
               let timeLeftText = null;
               
               if (isStaff) {
-                statusText = 'View Lesson';
+                statusText = t('course_detail.view_lesson');
                 buttonStyle = 'bg-white/10 hover:bg-white/20 text-white border border-white/20';
               } else if (progress) {
                 if (progress.completed) {
-                  statusText = 'Start again';
+                  statusText = t('course_detail.start_again');
                   buttonStyle = 'bg-white/10 hover:bg-white/20 text-white border border-white/20';
                 } else if (progress.lastWatchedPosition > 0) {
-                  statusText = 'Resume';
+                  statusText = t('course_detail.resume');
                   buttonStyle = 'bg-blue-600 hover:bg-blue-500 text-white';
                   const left = Math.max(0, (lesson.durationInSeconds || 0) - progress.lastWatchedPosition);
-                  timeLeftText = `${formatTime(left)} left`;
+                  timeLeftText = `${formatTime(left)} ${t('course_detail.left')}`;
                 }
               }
 
@@ -318,7 +320,7 @@ export default function CourseDetailsPage() {
                       </div>
                       {(!progress?.completed || isStaff) && (
                         <p className="text-sm text-gray-500 mt-1">
-                          Duration: {formatTime(lesson.durationInSeconds || 0)}
+                          {t('course_detail.duration')} {formatTime(lesson.durationInSeconds || 0)}
                         </p>
                       )}
                     </div>
@@ -348,13 +350,13 @@ export default function CourseDetailsPage() {
           {isPublic && (
             <div className="mt-12 text-center p-8 bg-gradient-to-r from-emerald-900/40 to-blue-900/40 border border-emerald-500/20 rounded-xl">
               <p className="text-lg text-gray-300 mb-4">
-                Interested in taking this course?
+                {t('course_detail.interested')}
               </p>
               <Link 
                 href="/login" 
                 className="inline-block px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-500/20 transition-all"
               >
-                Login as a student and get access now!
+                {t('course_detail.login_to_access')}
               </Link>
             </div>
           )}

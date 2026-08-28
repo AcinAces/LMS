@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import LanguageSelector from './LanguageSelector';
+import { useLanguage } from '@/i18n/LanguageContext';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 
@@ -26,6 +28,20 @@ function timeAgo(dateParam: string | Date) {
 }
 
 export default function Navbar() {
+  const { t } = useLanguage();
+  const [showStudentDropdown, setShowStudentDropdown] = useState(false);
+  const studentDropdownRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    function handleStudentClickOutside(event: MouseEvent) {
+      if (studentDropdownRef.current && !studentDropdownRef.current.contains(event.target as Node)) {
+        setShowStudentDropdown(false);
+      }
+    }
+    if (showStudentDropdown) document.addEventListener('mousedown', handleStudentClickOutside);
+    return () => document.removeEventListener('mousedown', handleStudentClickOutside);
+  }, [showStudentDropdown]);
+
   const router = useRouter();
   const pathname = usePathname();
   const [username, setUsername] = useState<string | null>(null);
@@ -226,21 +242,21 @@ export default function Navbar() {
               href="/courses" 
               className={`px-4 py-2 text-base font-medium rounded-lg transition-all underline underline-offset-[6px] decoration-2 ${isActive('/courses') ? 'bg-white/10 text-emerald-400 decoration-emerald-400/50' : 'text-slate-300 hover:text-white hover:bg-white/5 decoration-slate-500/30 hover:decoration-slate-300/60'}`}
             >
-              All Courses
+              {t('nav.courses')}
             </Link>
             <span className="text-slate-600 font-light">|</span>
             <Link 
               href="/blogs" 
               className={`px-4 py-2 text-base font-medium rounded-lg transition-all underline underline-offset-[6px] decoration-2 ${isActive('/blogs') ? 'bg-white/10 text-emerald-400 decoration-emerald-400/50' : 'text-slate-300 hover:text-white hover:bg-white/5 decoration-slate-500/30 hover:decoration-slate-300/60'}`}
             >
-              Blogs
+              {t('nav.blogs')}
             </Link>
             <span className="text-slate-600 font-light">|</span>
             <Link 
               href="/ide" 
               className={`px-4 py-2 text-base font-medium rounded-lg transition-all underline underline-offset-[6px] decoration-2 ${isActive('/ide') ? 'bg-white/10 text-emerald-400 decoration-emerald-400/50' : 'text-slate-300 hover:text-white hover:bg-white/5 decoration-slate-500/30 hover:decoration-slate-300/60'}`}
             >
-              IDE
+              {t('nav.ide')}
             </Link>
           </div>
 
@@ -249,24 +265,34 @@ export default function Navbar() {
             {/* Desktop Right Links */}
             <div className="hidden lg:flex items-center space-x-2">
               {userRole === 'admin' && (
-                <Link href="/admin" className={`px-4 py-2 text-base font-medium rounded-lg transition-colors ${isActive('/admin') ? 'bg-blue-500/20 text-blue-400' : 'text-slate-300 hover:text-blue-400 hover:bg-blue-500/10'}`}>Admin</Link>
+                <Link href="/admin" className={`px-4 py-2 text-base font-medium rounded-lg transition-colors ${isActive('/admin') ? 'bg-blue-500/20 text-blue-400' : 'text-slate-300 hover:text-blue-400 hover:bg-blue-500/10'}`}>{t('nav.admin')}</Link>
               )}
               {userRole === 'content_manager' && (
-                <Link href="/content-manager" className={`px-4 py-2 text-base font-medium rounded-lg transition-colors ${isActive('/content-manager') ? 'bg-blue-500/20 text-blue-400' : 'text-slate-300 hover:text-blue-400 hover:bg-blue-500/10'}`}>Manager</Link>
+                <Link href="/content-manager" className={`px-4 py-2 text-base font-medium rounded-lg transition-colors ${isActive('/content-manager') ? 'bg-blue-500/20 text-blue-400' : 'text-slate-300 hover:text-blue-400 hover:bg-blue-500/10'}`}>{t('nav.manager')}</Link>
               )}
               {userRole === 'instructor' && (
-                <Link href="/instructor" className={`px-4 py-2 text-base font-medium rounded-lg transition-colors ${isActive('/instructor') ? 'bg-blue-500/20 text-blue-400' : 'text-slate-300 hover:text-blue-400 hover:bg-blue-500/10'}`}>Instructor</Link>
+                <Link href="/instructor" className={`px-4 py-2 text-base font-medium rounded-lg transition-colors ${isActive('/instructor') ? 'bg-blue-500/20 text-blue-400' : 'text-slate-300 hover:text-blue-400 hover:bg-blue-500/10'}`}>{t('nav.instructor')}</Link>
               )}
               {username && isStudent && (
-                <>
-                  <Link href="/my-courses" className={`px-4 py-2 text-base font-medium rounded-lg transition-all border border-slate-700/80 hover:border-emerald-500/50 ${isActive('/my-courses') ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' : 'text-slate-300 hover:text-emerald-400 hover:bg-emerald-500/10'}`}>
-                    My Courses
-                  </Link>
-                  <Link href="/track-progress" className={`px-4 py-2 text-base font-medium rounded-lg transition-all border border-slate-700/80 hover:border-emerald-500/50 ${isActive('/track-progress') ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' : 'text-slate-300 hover:text-emerald-400 hover:bg-emerald-500/10'}`}>
-                    Progress
-                  </Link>
-                </>
-              )}
+                  <div className="relative flex items-center" ref={studentDropdownRef}>
+                    <button 
+                      onClick={() => setShowStudentDropdown(!showStudentDropdown)}
+                      className={`flex items-center gap-1 px-4 py-2 text-base font-medium rounded-lg transition-colors ${(isActive('/my-courses') || isActive('/track-progress')) ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-300 hover:text-emerald-400 hover:bg-emerald-500/10'}`}
+                    >
+                      {t('nav.student')}
+                      <svg className={`w-4 h-4 transition-transform duration-200 ${showStudentDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    
+                    {showStudentDropdown && (
+                      <div className="absolute right-0 top-full mt-2 w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden animate-fade-in-up z-50">
+                        <div className="py-1 flex flex-col">
+                          <Link href="/my-courses" onClick={() => setShowStudentDropdown(false)} className={`px-4 py-2 text-sm font-medium transition-colors ${isActive('/my-courses') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-300 hover:bg-slate-800 hover:text-emerald-400'}`}>{t('nav.my_courses')}</Link>
+                          <Link href="/track-progress" onClick={() => setShowStudentDropdown(false)} className={`px-4 py-2 text-sm font-medium transition-colors ${isActive('/track-progress') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-300 hover:bg-slate-800 hover:text-emerald-400'}`}>{t('nav.progress')}</Link>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
             </div>
 
             {/* Profile Dropdown / Login Button (Visible on all sizes) */}
@@ -293,16 +319,16 @@ export default function Navbar() {
                   {showNotifications && (
                     <div className="absolute right-0 top-full mt-2 w-80 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up origin-top-right z-50">
                       <div className="px-4 py-3 border-b border-slate-800/50 bg-slate-800/20 flex items-center justify-between">
-                        <h3 className="font-semibold text-slate-200">Notifications</h3>
+                        <h3 className="font-semibold text-slate-200">{t('nav.notifications')}</h3>
                         <div className="flex gap-2 text-xs font-medium">
-                          <button onClick={() => setActiveNotifTab('unread')} className={`px-2 py-1 rounded transition-colors ${activeNotifTab === 'unread' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>New</button>
-                          <button onClick={() => setActiveNotifTab('marked')} className={`px-2 py-1 rounded transition-colors ${activeNotifTab === 'marked' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>Marked</button>
+                          <button onClick={() => setActiveNotifTab('unread')} className={`px-2 py-1 rounded transition-colors ${activeNotifTab === 'unread' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>{t('nav.new')}</button>
+                          <button onClick={() => setActiveNotifTab('marked')} className={`px-2 py-1 rounded transition-colors ${activeNotifTab === 'marked' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>{t('nav.marked')}</button>
                         </div>
                       </div>
                       <div className="max-h-96 overflow-y-auto">
                         {(!notifications[activeNotifTab] || notifications[activeNotifTab].length === 0) ? (
                           <div className="p-8 text-center text-slate-500 text-sm">
-                            No {activeNotifTab} notifications
+                            {t('nav.no_notifications').replace('{tab}', activeNotifTab === 'unread' ? t('nav.new') : t('nav.marked'))}
                           </div>
                         ) : (
                           <div className="divide-y divide-slate-800/50">
@@ -370,7 +396,7 @@ export default function Navbar() {
                         className="cursor-pointer w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        Profile Settings
+                        {t('nav.profile_settings')}
                       </button>
                       <div className="h-px bg-white/10 my-1"></div>
                       <button
@@ -381,7 +407,7 @@ export default function Navbar() {
                         className="cursor-pointer w-full text-left px-4 py-2.5 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors flex items-center gap-2"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                        Logout
+                        {t('nav.logout')}
                       </button>
                     </div>
                   </>
@@ -392,9 +418,11 @@ export default function Navbar() {
                 href="/login" 
                 className="px-4 sm:px-6 py-2 sm:py-2.5 text-sm sm:text-base font-medium text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg shadow-lg shadow-emerald-500/20 transition-all transform hover:-translate-y-0.5"
               >
-                Login
+                {t('nav.login')}
               </Link>
             )}
+
+            <LanguageSelector />
 
             {/* Mobile Menu Toggle */}
             <button 
@@ -419,41 +447,42 @@ export default function Navbar() {
               href="/courses" 
               className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive('/courses') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
             >
-              All Courses
+              {t('nav.courses')}
             </Link>
             <Link 
               href="/blogs" 
               className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive('/blogs') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
             >
-              Blogs
+              {t('nav.blogs')}
             </Link>
             <Link 
               href="/ide" 
               className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive('/ide') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
             >
-              IDE
+              {t('nav.ide')}
             </Link>
             
             <div className="h-px bg-white/10 my-2"></div>
             
             {userRole === 'admin' && (
-              <Link href="/admin" className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive('/admin') ? 'bg-blue-500/10 text-blue-400' : 'text-slate-300 hover:bg-white/5 hover:text-blue-400'}`}>Admin Dashboard</Link>
+              <Link href="/admin" className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive('/admin') ? 'bg-blue-500/10 text-blue-400' : 'text-slate-300 hover:bg-white/5 hover:text-blue-400'}`}>{t('nav.admin')}</Link>
             )}
             {userRole === 'content_manager' && (
-              <Link href="/content-manager" className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive('/content-manager') ? 'bg-blue-500/10 text-blue-400' : 'text-slate-300 hover:bg-white/5 hover:text-blue-400'}`}>Manager Dashboard</Link>
+              <Link href="/content-manager" className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive('/content-manager') ? 'bg-blue-500/10 text-blue-400' : 'text-slate-300 hover:bg-white/5 hover:text-blue-400'}`}>{t('nav.manager')}</Link>
             )}
             {userRole === 'instructor' && (
-              <Link href="/instructor" className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive('/instructor') ? 'bg-blue-500/10 text-blue-400' : 'text-slate-300 hover:bg-white/5 hover:text-blue-400'}`}>Instructor Dashboard</Link>
+              <Link href="/instructor" className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive('/instructor') ? 'bg-blue-500/10 text-blue-400' : 'text-slate-300 hover:bg-white/5 hover:text-blue-400'}`}>{t('nav.instructor')}</Link>
             )}
             {username && isStudent && (
-              <>
+              <div className="space-y-1">
+                <div className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('nav.student')}</div>
                 <Link href="/my-courses" className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive('/my-courses') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
-                  My Courses
+                  {t('nav.my_courses')}
                 </Link>
                 <Link href="/track-progress" className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive('/track-progress') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
-                  Track Progress
+                  {t('nav.progress')}
                 </Link>
-              </>
+              </div>
             )}
           </div>
         )}
@@ -470,7 +499,7 @@ export default function Navbar() {
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
             
-            <h3 className="text-2xl font-bold text-white mb-6">Profile Settings</h3>
+            <h3 className="text-2xl font-bold text-white mb-6">{t('nav.profile_settings')}</h3>
             
             {profileError && (
               <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg">
@@ -486,7 +515,7 @@ export default function Navbar() {
 
             <form onSubmit={handleProfileUpdate} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Email Address</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">{t('nav.email_address')}</label>
                 <input 
                   type="email" 
                   value={profileEmail}
@@ -497,23 +526,23 @@ export default function Navbar() {
               </div>
               
               <div className="border-t border-white/5 my-4 pt-4">
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">New Password</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">{t('nav.new_password')}</label>
                 <input 
                   type="password" 
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Leave blank to keep current password"
+                  placeholder={t('nav.leave_blank')}
                   className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
                 />
               </div>
 
               <div className="bg-slate-950/50 border border-red-500/20 rounded-xl p-4 mt-6">
-                <label className="block text-sm font-bold text-red-400 mb-2">Current Password (Required)</label>
+                <label className="block text-sm font-bold text-red-400 mb-2">{t('nav.current_password')}</label>
                 <input 
                   type="password" 
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password to verify"
+                  placeholder={t('nav.enter_current')}
                   className="w-full bg-slate-900 border border-red-500/30 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all placeholder:text-slate-600"
                   required
                 />
@@ -525,14 +554,14 @@ export default function Navbar() {
                   onClick={() => setShowProfileModal(false)}
                   className="flex-1 px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl font-medium transition-colors"
                 >
-                  Cancel
+                  {t('nav.cancel')}
                 </button>
                 <button 
                   type="submit"
                   disabled={profileLoading || !currentPassword}
                   className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50"
                 >
-                  {profileLoading ? 'Saving...' : 'Save Changes'}
+                  {profileLoading ? t('nav.saving') : t('nav.save_changes')}
                 </button>
               </div>
             </form>
@@ -542,6 +571,7 @@ export default function Navbar() {
     </>
   );
 }
+
 
 
 

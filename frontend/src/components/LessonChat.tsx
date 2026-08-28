@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface LessonChatProps {
   lessonId: string;
@@ -24,6 +25,7 @@ interface StudentThread {
 }
 
 export default function LessonChat({ lessonId, courseId, lessonTitle, lessonOrder, isStaff }: LessonChatProps) {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -182,15 +184,15 @@ export default function LessonChat({ lessonId, courseId, lessonTitle, lessonOrde
             <div>
               <h3 className="font-bold text-white">
                 {isStaff && selectedStudentId 
-                  ? `${students.find(s => s.id === selectedStudentId)?.username || 'Student'} - Queries`
-                  : `Lesson ${lessonOrder} - Questions`}
+                  ? `${students.find(s => s.id === selectedStudentId)?.username || 'Student'} - ${t('chat.queries_title')}`
+                  : `${t('lesson.back_to')} ${lessonOrder} - ${t('chat.questions_title')}`}
               </h3>
               {isStaff && selectedStudentId && (
                 <button 
                   onClick={() => setSelectedStudentId(null)}
                   className="text-xs text-emerald-400 hover:underline"
                 >
-                  &larr; Back to Students
+                  &larr; {t('chat.back_to_students')}
                 </button>
               )}
             </div>
@@ -206,9 +208,9 @@ export default function LessonChat({ lessonId, courseId, lessonTitle, lessonOrde
           <div className="flex-1 overflow-y-auto p-4 bg-black/40">
             {isStaff && !selectedStudentId ? (
               <div className="space-y-2">
-                <p className="text-gray-400 text-sm mb-4">Select a student to reply:</p>
+                <p className="text-gray-400 text-sm mb-4">{t('chat.select_student')}</p>
                 {students.length === 0 ? (
-                  <p className="text-gray-500 text-sm italic">No questions asked yet.</p>
+                  <p className="text-gray-500 text-sm italic">{t('chat.no_questions')}</p>
                 ) : (
                   students.map(s => (
                     <button
@@ -230,7 +232,7 @@ export default function LessonChat({ lessonId, courseId, lessonTitle, lessonOrde
               <div className="space-y-4">
                 {messages.length === 0 ? (
                   <p className="text-gray-500 text-sm italic text-center mt-4">
-                    {isStaff ? 'No messages here yet.' : 'Ask a question here. Course authors will reply.'}
+                    {isStaff ? t('chat.no_messages_staff') : t('chat.no_messages_student')}
                   </p>
                 ) : (
                   messages.map(msg => {
@@ -262,7 +264,7 @@ export default function LessonChat({ lessonId, courseId, lessonTitle, lessonOrde
                   type="text"
                   value={newMessage}
                   onChange={e => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
+                  placeholder={t('chat.type_message')}
                   className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
                 />
                 <button
@@ -270,7 +272,7 @@ export default function LessonChat({ lessonId, courseId, lessonTitle, lessonOrde
                   disabled={!newMessage.trim()}
                   className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg px-4 py-2 text-sm font-bold transition-colors"
                 >
-                  Send
+                  {t('chat.send')}
                 </button>
               </div>
             </form>
@@ -282,7 +284,7 @@ export default function LessonChat({ lessonId, courseId, lessonTitle, lessonOrde
           className="relative bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg border border-emerald-400/30 rounded-full px-5 py-3 font-semibold transition-transform hover:scale-105 flex items-center gap-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
-          {isStaff ? 'Student Queries' : 'Have questions? Ask the authors'}
+          {isStaff ? t('chat.student_queries') : t('chat.ask_authors')}
           
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold flex items-center justify-center rounded-full animate-pulse border-2 border-gray-900">

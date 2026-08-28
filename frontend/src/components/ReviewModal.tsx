@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface ReviewModalProps {
   courseId: string;
@@ -8,6 +9,7 @@ interface ReviewModalProps {
 }
 
 export default function ReviewModal({ courseId, courseTitle, onClose, onSuccess }: ReviewModalProps) {
+  const { t } = useLanguage();
   const [teaching, setTeaching] = useState(0);
   const [content, setContent] = useState(0);
   const [difficulty, setDifficulty] = useState(0);
@@ -19,7 +21,7 @@ export default function ReviewModal({ courseId, courseTitle, onClose, onSuccess 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (teaching === 0 || content === 0 || difficulty === 0) {
-      setError('Please rate all fields (Teaching, Content, Difficulty) before submitting.');
+      setError(t('review.rate_all_fields'));
       return;
     }
     setSubmitting(true);
@@ -103,8 +105,8 @@ export default function ReviewModal({ courseId, courseTitle, onClose, onSuccess 
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
             </svg>
           </div>
-          <h2 className="text-3xl font-bold text-white mb-2">Thanks!</h2>
-          <p className="text-gray-400 text-center">Your feedback has been successfully submitted.</p>
+          <h2 className="text-3xl font-bold text-white mb-2">{t('review.thanks')}</h2>
+          <p className="text-gray-400 text-center">{t('review.feedback_submitted')}</p>
         </div>
       </div>
     );
@@ -123,31 +125,31 @@ export default function ReviewModal({ courseId, courseTitle, onClose, onSuccess 
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
         
-        <h2 className="text-2xl font-bold text-white mb-2">Share your feedback</h2>
+        <h2 className="text-2xl font-bold text-white mb-2">{t('review.share_feedback')}</h2>
         <p className="text-sm text-gray-400 mb-6">{courseTitle}</p>
 
         {error && <div className="p-3 mb-4 text-sm text-red-400 bg-red-400/10 rounded-lg border border-red-400/20">{error}</div>}
 
         <form onSubmit={handleSubmit}>
-          <StarRating label="Teaching" value={teaching} onChange={setTeaching} />
-          <StarRating label="Content" value={content} onChange={setContent} />
-          <StarRating label="Difficulty" value={difficulty} onChange={setDifficulty} />
+          <StarRating label={t('review.teaching')} value={teaching} onChange={setTeaching} />
+          <StarRating label={t('review.content')} value={content} onChange={setContent} />
+          <StarRating label={t('review.difficulty')} value={difficulty} onChange={setDifficulty} />
 
           <div className="mt-6 mb-2">
-            <label className="block text-gray-300 font-medium mb-2 text-sm">Feedback (optional)</label>
+            <label className="block text-gray-300 font-medium mb-2 text-sm">{t('review.feedback_optional')}</label>
             <textarea 
               value={feedback}
               onChange={(e) => setFeedback(e.target.value.slice(0, 300))}
-              placeholder="Tell us what you thought..."
+              placeholder={t('review.feedback_placeholder')}
               className="w-full h-24 p-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 resize-none text-sm"
             />
             <div className="text-right text-xs text-gray-500 mt-1">{feedback.length} / 300</div>
           </div>
 
           <div className="mt-6 flex justify-end gap-3">
-            <button type="button" onClick={onClose} className="cursor-pointer px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors">Cancel</button>
+            <button type="button" onClick={onClose} className="cursor-pointer px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors">{t('review.cancel')}</button>
             <button type="submit" disabled={submitting} className="cursor-pointer px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded-lg shadow-lg shadow-emerald-500/20 transition-all">
-              {submitting ? 'Submitting...' : 'Post Review'}
+              {submitting ? t('review.submitting') : t('review.post_review')}
             </button>
           </div>
         </form>

@@ -1,6 +1,10 @@
+'use client';
 import Link from 'next/link';
 
+import { useLanguage } from '@/i18n/LanguageContext';
+
 export default function Footer() {
+  const { t } = useLanguage();
   return (
     <footer className="bg-slate-950/80 border-t border-white/5 pt-16 pb-8 px-6 mt-auto">
       <div className="max-w-7xl mx-auto">
@@ -11,7 +15,7 @@ export default function Footer() {
               Acin's<span className="text-emerald-400">LMS</span>
             </Link>
             <p className="text-slate-400 text-sm max-w-md leading-relaxed mb-6">
-              Interactive lessons, comprehensive courses, and real-world projects designed to elevate your coding skills. Your next git commit starts here.
+              {t('footer.description')}
             </p>
             <div className="flex items-center gap-4 text-slate-400">
               <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">
@@ -27,32 +31,34 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-white font-bold mb-4">Quick Links</h4>
+            <h4 className="text-white font-bold mb-4">{t('footer.quick_links')}</h4>
             <ul className="space-y-3 text-sm text-slate-400">
-              <li><Link href="/" className="hover:text-emerald-400 transition-colors">Home</Link></li>
-              <li><Link href="/courses" className="hover:text-emerald-400 transition-colors">All Courses</Link></li>
-              <li><Link href="/blogs" className="hover:text-emerald-400 transition-colors">Blogs</Link></li>
-              <li><Link href="/track-progress" className="hover:text-emerald-400 transition-colors">My Progress</Link></li>
+              <li><Link href="/" className="hover:text-emerald-400 transition-colors">{t('footer.home')}</Link></li>
+              <li><Link href="/courses" className="hover:text-emerald-400 transition-colors">{t('footer.all_courses')}</Link></li>
+              <li><Link href="/blogs" className="hover:text-emerald-400 transition-colors">{t('footer.blogs')}</Link></li>
+              <li><Link href="/track-progress" className="hover:text-emerald-400 transition-colors">{t('footer.my_progress')}</Link></li>
             </ul>
           </div>
 
           {/* Legal */}
           <div>
-            <h4 className="text-white font-bold mb-4">Legal</h4>
+            <h4 className="text-white font-bold mb-4">{t('footer.legal')}</h4>
             <ul className="space-y-3 text-sm text-slate-400">
-              <li><Link href="#" className="hover:text-emerald-400 transition-colors">Privacy Policy</Link></li>
-              <li><Link href="#" className="hover:text-emerald-400 transition-colors">Terms of Service</Link></li>
-              <li><Link href="#" className="hover:text-emerald-400 transition-colors">Cookie Policy</Link></li>
-              <li><Link href="#" className="hover:text-emerald-400 transition-colors">Contact Us</Link></li>
+              <li><Link href="#" className="hover:text-emerald-400 transition-colors">{t('footer.privacy_policy')}</Link></li>
+              <li><Link href="#" className="hover:text-emerald-400 transition-colors">{t('footer.terms_of_service')}</Link></li>
+              <li><Link href="#" className="hover:text-emerald-400 transition-colors">{t('footer.cookie_policy')}</Link></li>
+              <li><Link href="#" className="hover:text-emerald-400 transition-colors">{t('footer.contact_us')}</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} Acin's LMS. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {t('footer.all_rights_reserved')}</p>
           <p>Made possible with lots of Sandwiches {'>'}.{'<'}</p>
         </div>
       </div>
     </footer>
   );
 }
+
+

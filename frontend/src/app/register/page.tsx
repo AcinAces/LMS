@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -6,6 +7,7 @@ import AnimatedBackground from '@/components/AnimatedBackground';
 import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -86,12 +88,12 @@ export default function RegisterPage() {
     setError('');
 
     if (password !== confirmPassword) {
-      setError("Passwords don't match!");
+      setError(t('auth.passwords_dont_match'));
       return;
     }
     
     if (usernameStatus === 'taken') {
-      setError("Please choose an available username.");
+      setError(t('auth.choose_available'));
       return;
     }
 
@@ -124,7 +126,7 @@ export default function RegisterPage() {
       setSuccessMode(true);
 
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
+      setError(t('auth.unexpected_error'));
       setLoading(false);
     }
   };
@@ -140,12 +142,12 @@ export default function RegisterPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-4">Registration Successful!</h2>
+          <h2 className="text-2xl font-bold text-white mb-4">{t('auth.registration_success')}</h2>
           <p className="text-gray-300 mb-6">
-            Your account has been created successfully.
+            {t('auth.account_created')}
           </p>
           <div className="text-emerald-400 font-medium">
-            Redirecting to login page in <span className="text-2xl ml-2">{countdown}</span>...
+            {t('auth.redirecting')} <span className="text-2xl ml-2">{countdown}</span>...
           </div>
         </div>
       </div>
@@ -161,17 +163,17 @@ export default function RegisterPage() {
           <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2">
             Acin's LMS
           </h1>
-          <p className="text-gray-400 text-sm">Create an account to start learning</p>
+          <p className="text-gray-400 text-sm">{t('auth.start_learning')}</p>
         </div>
 
         {error && error === 'email_taken' && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg text-center flex flex-col items-center gap-3">
-            <span className="text-red-500 text-sm font-medium">Email already registered!</span>
+            <span className="text-red-500 text-sm font-medium">{t('auth.email_taken')}</span>
             <Link 
               href="/login"
               className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-md text-white text-sm font-medium transition-colors flex items-center gap-2"
             >
-              Login instead?
+              {t('auth.login_instead')}
             </Link>
           </div>
         )}
@@ -185,10 +187,10 @@ export default function RegisterPage() {
         <form onSubmit={handleRegister} className="space-y-5">
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-300">Username</label>
-              {usernameStatus === 'checking' && <span className="text-xs text-gray-400">Checking...</span>}
-              {usernameStatus === 'available' && <span className="text-xs text-emerald-400">✓ Available</span>}
-              {usernameStatus === 'taken' && <span className="text-xs text-red-400">✗ Not available</span>}
+              <label className="block text-sm font-medium text-gray-300">{t('auth.username')}</label>
+              {usernameStatus === 'checking' && <span className="text-xs text-gray-400">{t('auth.checking')}</span>}
+              {usernameStatus === 'available' && <span className="text-xs text-emerald-400">✓ {t('auth.available')}</span>}
+              {usernameStatus === 'taken' && <span className="text-xs text-red-400">✗ {t('auth.not_available')}</span>}
             </div>
             <input 
               type="text" 
@@ -206,7 +208,7 @@ export default function RegisterPage() {
             />
             {usernameStatus === 'taken' && suggestions.length > 0 && (
               <div className="mt-2 text-sm text-gray-400">
-                Suggestions:{' '}
+                {t('auth.suggestions')}{' '}
                 <div className="flex gap-2 mt-1 flex-wrap">
                   {suggestions.map((s) => (
                     <button
@@ -224,7 +226,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t('auth.email')}</label>
             <input 
               type="email" 
               required
@@ -236,7 +238,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">{t('auth.password')}</label>
             <p className="text-xs text-amber-500/80 mb-2 italic">
               * Note: No password requirements temporarily
             </p>
@@ -251,7 +253,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t('auth.confirm_password')}</label>
             <input 
               type="password" 
               required
@@ -267,15 +269,15 @@ export default function RegisterPage() {
             disabled={loading || usernameStatus === 'taken'}
             className="w-full py-3 mt-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-600/50 text-white rounded-lg font-semibold transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-emerald-500/20 flex justify-center items-center"
           >
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? t('auth.creating_account') : t('auth.create_account')}
           </button>
         </form>
 
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-400">
-            Already have an account?{' '}
+            {t('auth.has_account')}{' '}
             <Link href="/login" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
-              Sign in
+              {t('auth.sign_in_link')}
             </Link>
           </p>
         </div>
@@ -283,3 +285,6 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+
+

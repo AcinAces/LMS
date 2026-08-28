@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 import { useState } from 'react';
 import Editor from '@monaco-editor/react';
@@ -22,6 +23,7 @@ const LANGUAGES = [
 ];
 
 export default function IDEPage() {
+  const { t } = useLanguage();
   const [selectedLang, setSelectedLang] = useState(LANGUAGES[0]);
   const [code, setCode] = useState(LANGUAGES[0].defaultCode);
   const [stdin, setStdin] = useState('');
@@ -69,7 +71,7 @@ export default function IDEPage() {
       {/* IDE Toolbar */}
       <div className="h-14 border-b border-white/10 bg-slate-900/50 px-4 flex items-center justify-between shadow-sm shrink-0">
         <div className="flex items-center gap-4">
-          <h1 className="text-emerald-400 font-bold text-lg hidden sm:block">Cloud IDE</h1>
+          <h1 className="text-emerald-400 font-bold text-lg hidden sm:block">{t('ide.cloud_ide')}</h1>
           <select 
             value={selectedLang.id} 
             onChange={handleLanguageChange}
@@ -92,12 +94,12 @@ export default function IDEPage() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Running...
+              {t('ide.running')}
             </>
           ) : (
             <>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-              Run Code
+              {t('ide.run_code')}
             </>
           )}
         </button>
@@ -136,12 +138,12 @@ export default function IDEPage() {
           {/* Custom Input (stdin) */}
           <div className="h-1/3 flex flex-col border-b border-white/10">
             <div className="h-8 bg-slate-900 border-b border-white/10 flex items-center px-4 text-xs font-medium text-slate-400 tracking-wider">
-              Standard Input (stdin)
+              {t('ide.standard_input')}
             </div>
             <textarea
               value={stdin}
               onChange={(e) => setStdin(e.target.value)}
-              placeholder="Enter inputs here..."
+              placeholder={t('ide.enter_inputs')}
               className="flex-1 bg-transparent resize-none outline-none p-4 text-sm text-slate-300 font-mono placeholder:text-slate-600"
             />
           </div>
@@ -149,11 +151,11 @@ export default function IDEPage() {
           {/* Output Terminal */}
           <div className="flex-1 flex flex-col">
             <div className="h-8 bg-slate-900 border-b border-white/10 flex items-center px-4 text-xs font-medium text-slate-400 tracking-wider">
-              Output Console
+              {t('ide.output_console')}
             </div>
             <div className="flex-1 p-4 font-mono text-sm overflow-auto break-words whitespace-pre-wrap">
               {!output ? (
-                <span className="text-slate-600">Run your code to see the output here...</span>
+                <span className="text-slate-600">{t('ide.placeholder_output')}</span>
               ) : output.error ? (
                 <span className="text-red-400">{output.error}</span>
               ) : (
@@ -163,10 +165,10 @@ export default function IDEPage() {
                     <span className={`px-2 py-0.5 rounded ${
                       output.statusCode === 200 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
                     }`}>
-                      {output.statusCode === 200 ? 'Executed Successfully' : 'Execution Failed'}
+                      {output.statusCode === 200 ? t('ide.executed_successfully') : t('ide.execution_failed')}
                     </span>
-                    {output.cpuTime && <span className="ml-3 text-slate-500">Time: {output.cpuTime}s</span>}
-                    {output.memory && <span className="ml-3 text-slate-500">Memory: {output.memory}KB</span>}
+                    {output.cpuTime && <span className="ml-3 text-slate-500">{t('ide.time')} {output.cpuTime}s</span>}
+                    {output.memory && <span className="ml-3 text-slate-500">{t('ide.memory')} {output.memory}KB</span>}
                   </div>
                   
                   {/* Combined Output / Error Dump */}
@@ -185,3 +187,7 @@ export default function IDEPage() {
     </div>
   );
 }
+
+
+
+

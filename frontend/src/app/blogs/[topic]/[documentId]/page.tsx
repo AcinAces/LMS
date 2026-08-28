@@ -1,4 +1,6 @@
-﻿import Link from 'next/link';
+import { cookies } from 'next/headers';
+import { getDictionary, Locale } from '@/i18n/dictionaries';
+import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 
 export const revalidate = 0;
@@ -15,6 +17,9 @@ async function getBlog(documentId: string) {
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ topic: string, documentId: string }> }) {
+  const cookieStore = await cookies();
+  const locale = (cookieStore.get('NEXT_LOCALE')?.value as Locale) || 'en';
+  const dict = await getDictionary(locale);
   const resolvedParams = await params;
   const decodedTopic = decodeURIComponent(resolvedParams.topic);
   
@@ -41,7 +46,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ topic
         
         <Link href={`/blogs/${encodeURIComponent(decodedTopic)}`} className="group inline-flex items-center gap-2 text-slate-400 hover:text-emerald-400 transition-colors mb-10 text-sm font-medium bg-slate-900/50 px-4 py-2 rounded-full border border-white/5 hover:border-emerald-500/30">
           <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-          Back to {decodedTopic}
+          {dict.blogs.back_to}{decodedTopic}
         </Link>
         
         <article className="bg-slate-900/40 backdrop-blur-xl p-8 md:p-14 rounded-3xl shadow-2xl border border-white/5 relative overflow-hidden">
@@ -84,3 +89,5 @@ export default async function BlogPostPage({ params }: { params: Promise<{ topic
     </div>
   );
 }
+
+

@@ -1,13 +1,15 @@
-﻿'use client';
+'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AnimatedBackground from '@/components/AnimatedBackground';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 export default function QuizTakingPage() {
   const params = useParams();
   const router = useRouter();
   const courseId = params.id as string;
   const quizId = params.quizId as string;
+  const { t } = useLanguage();
 
   const [quiz, setQuiz] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -295,7 +297,7 @@ export default function QuizTakingPage() {
               disabled={submitting}
               className="px-10 py-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xl font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50"
             >
-              {submitting ? 'Starting Session...' : 'Begin Quiz Now'}
+              {submitting ? 'Starting Session...' : t('quiz.start_quiz')}
             </button>
           </div>
         </div>
@@ -344,7 +346,7 @@ export default function QuizTakingPage() {
                 disabled={submitting}
                 className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xl font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50"
               >
-                {submitting ? 'Submitting to Server...' : 'Submit Quiz'}
+                {submitting ? 'Submitting to Server...' : t('quiz.submit_quiz')}
               </button>
             </div>
           </div>

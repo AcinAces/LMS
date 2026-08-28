@@ -1,4 +1,6 @@
-﻿import Link from 'next/link';
+import { cookies } from 'next/headers';
+import { getDictionary, Locale } from '@/i18n/dictionaries';
+import Link from 'next/link';
 
 const TOPICS = [
   'Data Structure and Algorithms',
@@ -28,13 +30,16 @@ const borderColors = [
   'hover:border-pink-500/50',
 ];
 
-export default function BlogsPage() {
+export default async function BlogsPage() {
+  const cookieStore = await cookies();
+  const locale = (cookieStore.get('NEXT_LOCALE')?.value as Locale) || 'en';
+  const dict = await getDictionary(locale);
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-950 text-slate-100 pt-12 px-4 sm:px-6 lg:px-8 pb-20">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16 animate-fade-in-up">
-          <h1 className="text-4xl md:text-6xl font-extrabold mb-6 text-white tracking-tight">Explore the Library</h1>
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto">Dive into our curated collection of programming articles, tutorials, and guides spanning across various domains of software engineering.</p>
+          <h1 className="text-4xl md:text-6xl font-extrabold mb-6 text-white tracking-tight">{dict.blogs.title}</h1>
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">{dict.blogs.subtitle}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in-up delay-100">
@@ -64,3 +69,5 @@ export default function BlogsPage() {
     </div>
   );
 }
+
+
