@@ -67,7 +67,7 @@ export default function AdminQuizzesPage() {
       data: {
         quizTitle: formData.quizTitle,
         quizDescription: formData.quizDescription,
-        course: formData.course || null
+        ...(formData.course ? { course: { connect: [formData.course] } } : {})
       }
     };
 

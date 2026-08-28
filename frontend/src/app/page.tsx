@@ -6,7 +6,7 @@ import StatCounters from '@/components/StatCounters';
 
 async function getFeaturedCourses() {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?populate[0]=courseAuthor&populate[1]=lessons`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?filters[isFeatured][$eq]=true&populate[0]=courseAuthor&populate[1]=lessons`, {
       next: { revalidate: 60 }
     });
     if (!res.ok) return [];

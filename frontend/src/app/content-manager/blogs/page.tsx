@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import DataTable, { ColumnDef } from '@/components/admin/DataTable';
@@ -116,13 +116,15 @@ export default function AdminBlogsPage() {
     const jwt = localStorage.getItem('jwt');
     const isEditing = !!editingData?.documentId;
     
+    const userStr = localStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : {};
     const payload = {
       data: {
         title: formData.title,
         topic: formData.topic,
         subtopic: formData.subtopic,
         body: formData.body,
-        author: JSON.parse(localStorage.getItem('user') || '{}').id,
+        ...(user.id ? { author: { connect: [user.documentId || user.id] } } : {}),
         ...(isEditing ? {} : { isPublished: false })
       }
     };

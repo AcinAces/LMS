@@ -61,6 +61,10 @@
         "Contest"
       ],
       "default": "Theory"
+    },
+    "isFeatured": {
+      "type": "boolean",
+      "default": false
     }
   }
 }

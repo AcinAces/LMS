@@ -504,6 +504,7 @@ export interface ApiCourseCourse extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::enrollment.enrollment'
     >;
+    isFeatured: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     lessons: Schema.Attribute.Relation<'oneToMany', 'api::lesson.lesson'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<

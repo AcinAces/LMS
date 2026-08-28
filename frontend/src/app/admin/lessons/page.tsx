@@ -105,7 +105,7 @@ export default function AdminLessonsPage() {
         title: formData.title,
         youtubeVideoId: videoId,
         order: requestedOrder,
-        course: formData.course || null
+        ...(formData.course ? { course: { connect: [formData.course] } } : {})
       }
     };
 

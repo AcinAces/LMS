@@ -63,7 +63,7 @@ export default function AdminCoursesPage() {
   const fields: FormField[] = [
     { key: 'courseTitle', label: 'Course Title', type: 'text', required: true },
     { key: 'courseType', label: 'Course Type', type: 'select', options: [{value: 'Theory', label: 'Theory'}, {value: 'Contest', label: 'Contest'}], required: true },
-    { key: 'courseAuthor', label: 'Select Instructor', type: 'select', required: true, options: instructors.map(i => ({ value: i.id, label: i.username })) },
+    { key: 'courseAuthor', label: 'Select Instructor', type: 'select', required: true, options: instructors.map(i => ({ value: i.documentId || i.id, label: i.username })) },
     { key: 'courseTag', label: 'Tag (e.g. Popular, New)', type: 'text' },
     { key: 'courseDescription', label: 'Description', type: 'textarea' },
   ];
@@ -78,7 +78,7 @@ export default function AdminCoursesPage() {
       data: {
         courseTitle: formData.courseTitle,
         courseType: formData.courseType,
-        ...(formData.courseAuthor ? { courseAuthor: { connect: [Number(formData.courseAuthor)] } } : {}),
+        ...(formData.courseAuthor ? { courseAuthor: { connect: [formData.courseAuthor] } } : {}),
         courseTag: formData.courseTag,
         // Wrap text in a block for richtext in v5 if needed, but string works for plain text attributes
         courseDescription: formData.courseDescription
@@ -149,7 +149,7 @@ export default function AdminCoursesPage() {
           setEditingData({ 
             ...row, 
             courseDescription: desc,
-            courseAuthor: row.courseAuthor?.id
+            courseAuthor: row.courseAuthor?.documentId || row.courseAuthor?.id
           }); 
           setIsModalOpen(true); 
         }}
