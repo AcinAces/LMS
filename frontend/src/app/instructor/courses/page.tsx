@@ -39,6 +39,9 @@ export default function AdminCoursesPage() {
     { key: 'courseTag', label: 'Tag', render: (row) => (
       <span className="px-2 py-1 bg-white/10 rounded-full text-xs">{row.courseTag || 'None'}</span>
     )},
+    { key: 'courseType', label: 'Type', render: (row) => (
+      <span className="text-blue-400 text-xs font-bold">{row.courseType || 'Theory'}</span>
+    )},
     { key: 'publishedAt', label: 'Status', render: (row) => (
       <span className={`px-2 py-1 rounded-full text-xs ${row.publishedAt ? 'bg-emerald-500/20 text-emerald-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
         {row.publishedAt ? 'Published' : 'Draft'}
@@ -48,6 +51,7 @@ export default function AdminCoursesPage() {
 
   const fields: FormField[] = [
     { key: 'courseTitle', label: 'Course Title', type: 'text', required: true },
+    { key: 'courseType', label: 'Course Type', type: 'select', options: [{value: 'Theory', label: 'Theory'}, {value: 'Contest', label: 'Contest'}], required: true },
     { key: 'courseTag', label: 'Tag (e.g. Popular, New)', type: 'text' },
     { key: 'courseDescription', label: 'Description', type: 'textarea' },
   ];
@@ -61,6 +65,7 @@ export default function AdminCoursesPage() {
     const payload = {
       data: {
         courseTitle: formData.courseTitle,
+        courseType: formData.courseType,
         courseTag: formData.courseTag,
         courseDescription: formData.courseDescription,
         // Enforce the author is the currently logged in instructor (using Strapi v5 connect syntax)
@@ -122,7 +127,7 @@ export default function AdminCoursesPage() {
         title="Courses"
         columns={columns}
         data={courses}
-        onAdd={() => { setEditingData({}); setIsModalOpen(true); }}
+        onAdd={() => { setEditingData({ courseType: 'Theory' }); setIsModalOpen(true); }}
         onEdit={(row) => { 
           // Extract plain text from blocks if it's a rich text array
           let desc = row.courseDescription;
