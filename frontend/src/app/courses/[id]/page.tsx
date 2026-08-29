@@ -64,17 +64,12 @@ export default function CourseDetailsPage() {
         if (jwt) headers['Authorization'] = `Bearer ${jwt}`;
         
         // Populate deeply to ensure we get the student in enrollments
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses/${params.id}?populate[0]=courseAuthor&populate[1]=lessons`, {
+        let res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses/${params.id}?populate[0]=courseAuthor&populate[1]=lessons`, {
           headers
         });
         
         if (res.status === 401) {
-          console.error('Session expired or invalid token. Logging out...');
-          localStorage.removeItem('jwt');
-          localStorage.removeItem('user');
-          localStorage.removeItem('loginTimestamp');
-          router.push('/login');
-          return;
+          res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses/${params.id}?populate[0]=courseAuthor&populate[1]=lessons`);
         }
 
         if (!res.ok) throw new Error('Failed to fetch course');

@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import DataTable, { ColumnDef } from '@/components/admin/DataTable';
+import { useToast } from '@/context/ToastContext';
 
 const TOPIC_HIERARCHY: Record<string, string[]> = {
   'Data Structure and Algorithms': ['Fundamentals', 'Maths & Recursion', 'Array & String'],
@@ -12,9 +14,12 @@ const TOPIC_HIERARCHY: Record<string, string[]> = {
   'Java': ['Core Java', 'Spring Boot', 'Java Collections']
 };
 
-export default function AdminBlogsPage() {
+export default function ContentManagerBlogsPage() {
+  const toast = useToast();
   const [blogs, setBlogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState<any>(null);
@@ -55,20 +60,23 @@ export default function AdminBlogsPage() {
   const handleTogglePublish = async (row: any) => {
     const jwt = localStorage.getItem('jwt');
     const isCurrentlyPublished = !!row.isPublished;
+    const newStatus = !isCurrentlyPublished;
     
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/blogs/${row.documentId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/blogs/${row.documentId}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${jwt}` 
         },
-        body: JSON.stringify({ data: { isPublished: !isCurrentlyPublished } })
+        body: JSON.stringify({ data: { isPublished: newStatus } })
       });
+      if (!res.ok) throw new Error('Failed to change publish status');
+      toast.success(`Blog "${row.title}" is now ${newStatus ? 'Published' : 'a Draft'}.`);
       fetchBlogs();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert('Failed to change publish status');
+      toast.error(e.message || 'Failed to change publish status');
     }
   };
 
@@ -146,10 +154,12 @@ export default function AdminBlogsPage() {
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error?.message || 'Failed to save blog');
       
+      toast.success(isEditing ? 'Blog updated successfully!' : 'Blog created successfully!');
       setIsModalOpen(false);
       fetchBlogs();
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message || 'Failed to save blog');
     } finally {
       setSaving(false);
     }
@@ -158,13 +168,18 @@ export default function AdminBlogsPage() {
   const handleDelete = async (row: any) => {
     if (!confirm(`Are you sure you want to delete blog "${row.title}"?`)) return;
     
-    const jwt = localStorage.getItem('jwt');
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/blogs/${row.documentId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${jwt}` }
-    });
-    
-    fetchBlogs();
+    try {
+      const jwt = localStorage.getItem('jwt');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/blogs/${row.documentId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      });
+      if (!res.ok) throw new Error('Failed to delete blog');
+      toast.success(`Blog "${row.title}" deleted.`);
+      fetchBlogs();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete blog');
+    }
   };
 
   if (loading) return <div>Loading blogs...</div>;
@@ -186,8 +201,8 @@ export default function AdminBlogsPage() {
         addLabel="New Blog Post"
       />
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+      {isModalOpen && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md overflow-y-auto">
           <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-2xl shadow-2xl relative my-8">
             <div className="p-6 border-b border-white/10 flex justify-between items-center sticky top-0 bg-gray-900 rounded-t-2xl z-10">
               <h2 className="text-xl font-bold text-white">{editingData ? 'Edit Blog' : 'Create Blog'}</h2>
@@ -206,58 +221,67 @@ export default function AdminBlogsPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Topic <span className="text-red-400">*</span></label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-200">Topic <span className="text-red-400">*</span></label>
                   <select
                     required
                     value={formData.topic}
                     onChange={(e) => setFormData({ ...formData, topic: e.target.value, subtopic: '' })}
-                    className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 [&>option]:bg-gray-900"
+                    className="w-full px-3.5 py-2.5 bg-black/50 border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all appearance-none [&>option]:bg-gray-900"
                   >
-                    <option value="">Select a Topic...</option>
+                    <option value="">Select a topic category...</option>
                     {Object.keys(TOPIC_HIERARCHY).map(t => (
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>
+                  <p className="text-xs text-gray-400">Primary domain category</p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Subtopic <span className="text-red-400">*</span></label>
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-200">Subtopic <span className="text-red-400">*</span></label>
                   <select
                     required
                     disabled={!formData.topic}
                     value={formData.subtopic}
                     onChange={(e) => setFormData({ ...formData, subtopic: e.target.value })}
-                    className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 [&>option]:bg-gray-900 disabled:opacity-50"
+                    className="w-full px-3.5 py-2.5 bg-black/50 border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all appearance-none [&>option]:bg-gray-900 disabled:opacity-50"
                   >
-                    <option value="">Select a Subtopic...</option>
+                    <option value="">Select a subtopic module...</option>
                     {formData.topic && TOPIC_HIERARCHY[formData.topic]?.map(s => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
+                  <p className="text-xs text-gray-400">Specific topic section</p>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Blog Title <span className="text-red-400">*</span></label>
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-gray-200">Blog Title <span className="text-red-400">*</span></label>
                 <input
                   type="text"
                   required
+                  minLength={5}
+                  maxLength={150}
+                  placeholder="e.g. Mastering Graph Algorithms: Dijkstra vs Bellman-Ford"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 />
+                <p className="text-xs text-gray-400">Engaging, clear title for the article (5–150 characters)</p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Content (Markdown) <span className="text-red-400">*</span></label>
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-gray-200">Content (Markdown) <span className="text-red-400">*</span></label>
                 <textarea
                   required
+                  rows={8}
+                  placeholder="Write the article in Markdown format (headers, code snippets, lists, bold text)..."
                   value={formData.body}
                   onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-                  className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 min-h-[200px]"
+                  className="w-full px-3.5 py-2.5 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all min-h-[220px]"
                 />
+                <p className="text-xs text-gray-400">Full article content supporting GitHub Flavored Markdown</p>
               </div>
 
               <div className="pt-4 flex justify-end gap-3 sticky bottom-0 bg-gray-900 py-2">
@@ -271,14 +295,15 @@ export default function AdminBlogsPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-600/50 text-white text-sm font-medium rounded-lg transition-colors"
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-600/50 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-emerald-600/20"
                 >
                   {saving ? 'Saving...' : 'Save as Draft'}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

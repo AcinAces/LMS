@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useToast } from '@/context/ToastContext';
 
 export default function FeaturedCoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
@@ -8,6 +9,7 @@ export default function FeaturedCoursesPage() {
   const [saving, setSaving] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     fetchCourses();
@@ -38,7 +40,7 @@ export default function FeaturedCoursesPage() {
         return prev.filter(id => id !== documentId);
       } else {
         if (prev.length >= 5) {
-          alert('You can only select up to 5 featured courses.');
+          toast.warning('You can only select up to 5 featured courses.');
           return prev;
         }
         return [...prev, documentId];
@@ -69,11 +71,11 @@ export default function FeaturedCoursesPage() {
         });
       }
       
-      alert('Featured courses updated successfully!');
+      toast.success('Featured courses updated successfully!');
       fetchCourses();
     } catch (err) {
       console.error(err);
-      alert('Failed to update featured courses.');
+      toast.error('Failed to update featured courses.');
     } finally {
       setSaving(false);
     }

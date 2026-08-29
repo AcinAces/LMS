@@ -1,5 +1,6 @@
 'use client';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useToast } from '@/context/ToastContext';
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -8,6 +9,7 @@ import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
   const { t } = useLanguage();
+  const toast = useToast();
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -88,12 +90,16 @@ export default function RegisterPage() {
     setError('');
 
     if (password !== confirmPassword) {
-      setError(t('auth.passwords_dont_match'));
+      const msg = t('auth.passwords_dont_match') || "Passwords don't match";
+      setError(msg);
+      toast.warning(msg);
       return;
     }
     
     if (usernameStatus === 'taken') {
-      setError(t('auth.choose_available'));
+      const msg = t('auth.choose_available') || 'Please choose an available username';
+      setError(msg);
+      toast.warning(msg);
       return;
     }
 
@@ -113,20 +119,26 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
+        let msg = data?.error?.message || "Registration failed.";
         if (data?.error?.message?.toLowerCase().includes('email') || data?.error?.message?.toLowerCase().includes('taken')) {
           setError('email_taken');
+          msg = "Email or username is already in use.";
         } else {
-          setError(data?.error?.message || "Registration failed.");
+          setError(msg);
         }
+        toast.error(msg);
         setLoading(false);
         return;
       }
 
-      // Success! Switch to success modal
+      // Success! Switch to success modal and toast
+      toast.success('Account created successfully! Redirecting to login...', 'Registration Complete');
       setSuccessMode(true);
 
     } catch (err) {
-      setError(t('auth.unexpected_error'));
+      const msg = t('auth.unexpected_error') || 'An unexpected error occurred';
+      setError(msg);
+      toast.error(msg);
       setLoading(false);
     }
   };

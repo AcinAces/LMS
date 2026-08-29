@@ -12,7 +12,7 @@ export default factories.createCoreController('api::course.course', ({ strapi })
 
     // Automatically set the courseAuthor to the logged-in user
     if (user.role?.type === 'instructor') {
-      ctx.request.body.data.courseAuthor = user.id;
+      ctx.request.body.data.courseAuthor = { connect: [user.documentId || user.id] };
     }
     
     return super.create(ctx);

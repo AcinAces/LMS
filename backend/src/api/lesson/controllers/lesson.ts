@@ -5,16 +5,40 @@ export default factories.createCoreController('api::lesson.lesson', ({ strapi })
     const user = ctx.state.user;
     if (!user) return ctx.unauthorized('You must be logged in');
 
+    const data = ctx.request.body.data || {};
+    if (!data.title || typeof data.title !== 'string' || data.title.trim().length === 0) {
+      return ctx.badRequest('Lesson title is required');
+    }
+    if (!data.youtubeVideoId || typeof data.youtubeVideoId !== 'string' || data.youtubeVideoId.trim().length === 0) {
+      return ctx.badRequest('YouTube video ID or URL is required');
+    }
+    if (data.order !== undefined) {
+      const orderNum = Number(data.order);
+      if (isNaN(orderNum) || orderNum < 1 || !Number.isInteger(orderNum)) {
+        return ctx.badRequest('Lesson order must be a positive whole number (1 or greater)');
+      }
+      data.order = orderNum;
+    }
+
     if (user.role?.type === 'instructor') {
-      const courseId = ctx.request.body.data?.course;
-      if (!courseId) return ctx.badRequest('Course ID is required to create a lesson');
+      const courseInput = data.course;
+      if (!courseInput) return ctx.badRequest('Course is required to create a lesson');
+
+      let courseDocId = typeof courseInput === 'string' ? courseInput : null;
+      if (!courseDocId && courseInput?.connect && Array.isArray(courseInput.connect)) {
+        courseDocId = courseInput.connect[0];
+      } else if (!courseDocId && typeof courseInput === 'object') {
+        courseDocId = courseInput.documentId || courseInput.id;
+      }
+
+      if (!courseDocId) return ctx.badRequest('Course ID is required to create a lesson');
 
       const course = await strapi.documents('api::course.course').findOne({
-        documentId: courseId,
+        documentId: courseDocId,
         populate: ['courseAuthor'],
       });
 
-      if (!course || course.courseAuthor?.id !== user.id) {
+      if (!course || (course.courseAuthor?.id !== user.id && course.courseAuthor?.documentId !== user.documentId)) {
         return ctx.unauthorized('You can only add lessons to your own courses.');
       }
     }
@@ -26,6 +50,15 @@ export default factories.createCoreController('api::lesson.lesson', ({ strapi })
     const user = ctx.state.user;
     if (!user) return ctx.unauthorized('You must be logged in');
 
+    const data = ctx.request.body.data || {};
+    if (data.order !== undefined) {
+      const orderNum = Number(data.order);
+      if (isNaN(orderNum) || orderNum < 1 || !Number.isInteger(orderNum)) {
+        return ctx.badRequest('Lesson order must be a positive whole number (1 or greater)');
+      }
+      data.order = orderNum;
+    }
+
     if (user.role?.type === 'instructor') {
       const documentId = ctx.params.id;
       const lesson = await strapi.documents('api::lesson.lesson').findOne({
@@ -34,7 +67,7 @@ export default factories.createCoreController('api::lesson.lesson', ({ strapi })
       });
 
       if (!lesson) return ctx.notFound('Lesson not found');
-      if (lesson.course?.courseAuthor?.id !== user.id) {
+      if (lesson.course?.courseAuthor?.id !== user.id && lesson.course?.courseAuthor?.documentId !== user.documentId) {
         return ctx.unauthorized('You can only edit lessons for your own courses.');
       }
     }

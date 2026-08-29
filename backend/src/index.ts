@@ -41,24 +41,37 @@ export default {
         strapi.log.info('Created Content Manager role');
       }
 
-      // 4. Grant Lesson Chat API permissions to roles
+      // 4. Grant Lesson Chat, Progress, and Core API permissions to roles
       const allRoles = await roleService.find();
       for (const role of allRoles) {
-        if (['authenticated', 'instructor', 'content_manager'].includes(role.type)) {
+        if (['authenticated', 'instructor', 'content_manager', 'admin'].includes(role.type)) {
           const roleId = role.id;
-          const currentRole = await roleService.findOne(roleId);
-          // Add custom chat controller permissions
           const actionsToGrant = [
             'api::lesson-message.chat.getChat',
             'api::lesson-message.chat.sendMessage',
             'api::lesson-message.chat.markRead',
-            'api::lesson-message.chat.getStudents'
+            'api::lesson-message.chat.getStudents',
+            'api::lesson-message.chat.getNotifications',
+            'api::lesson-progress.lesson-progress.find',
+            'api::lesson-progress.lesson-progress.findOne',
+            'api::lesson-progress.lesson-progress.create',
+            'api::lesson-progress.lesson-progress.update',
+            'api::lesson-progress.lesson-progress.sync',
+            'api::quiz-attempt.quiz-attempt.find',
+            'api::quiz-attempt.quiz-attempt.findOne',
+            'api::quiz-attempt.quiz-attempt.start',
+            'api::quiz-attempt.quiz-attempt.violation',
+            'api::quiz-attempt.quiz-attempt.submit',
+            'api::quiz-attempt.quiz-attempt.autosave',
+            'api::enrollment.enrollment.find',
+            'api::enrollment.enrollment.findOne',
+            'api::enrollment.enrollment.create',
+            'api::review.review.find',
+            'api::review.review.findOne',
+            'api::review.review.create'
           ];
           
           let updated = false;
-          // In Strapi 5, permissions are handled slightly differently.
-          // The easiest way is to use the permissions service directly if available, or just log a reminder if not.
-          // I will use strapi.db.query to safely insert if not exists.
           for (const action of actionsToGrant) {
             const existing = await strapi.db.query('plugin::users-permissions.permission').findOne({
               where: { action, role: roleId }
@@ -71,7 +84,7 @@ export default {
             }
           }
           if (updated) {
-            strapi.log.info(`Granted lesson-message permissions to ${role.name}`);
+            strapi.log.info(`Granted core permissions to ${role.name}`);
           }
         }
       }

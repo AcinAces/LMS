@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ScrollbarHider from "@/components/ScrollbarHider";
 import { LanguageProvider } from "@/i18n/LanguageContext";
+import { ToastProvider } from "@/context/ToastContext";
 import { getDictionary, Locale } from "@/i18n/dictionaries";
 
 const geistSans = Geist({
@@ -49,12 +50,14 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-slate-950 text-slate-50 selection:bg-emerald-500 selection:text-white">
         <LanguageProvider locale={locale} dict={dict}>
-          <ScrollbarHider />
-          <Navbar />
-          <main className="flex-grow pt-16 animate-fade-in-up">
-            {children}
-          </main>
-          <Footer />
+          <ToastProvider>
+            <ScrollbarHider />
+            <Navbar />
+            <main className="flex-grow pt-16 animate-fade-in-up">
+              {children}
+            </main>
+            <Footer />
+          </ToastProvider>
         </LanguageProvider>
       </body>
     </html>

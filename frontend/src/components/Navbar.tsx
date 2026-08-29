@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import LanguageSelector from './LanguageSelector';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useToast } from '@/context/ToastContext';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 
@@ -44,6 +45,7 @@ export default function Navbar() {
 
   const router = useRouter();
   const pathname = usePathname();
+  const toast = useToast();
   const [username, setUsername] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userObject, setUserObject] = useState<any>(null);
@@ -157,7 +159,6 @@ export default function Navbar() {
     localStorage.removeItem('jwt');
     localStorage.removeItem('user');
     localStorage.removeItem('role');
-    localStorage.removeItem('loginTimestamp');
     setUsername(null);
     setUserRole(null);
     setUserObject(null);
@@ -199,6 +200,7 @@ export default function Navbar() {
       localStorage.setItem('user', JSON.stringify(updatedUser));
       setUserObject(updatedUser);
       setProfileSuccess('Profile updated successfully!');
+      toast.success('Profile updated successfully!');
       
       if (newPassword) {
         setCurrentPassword('');
@@ -209,7 +211,9 @@ export default function Navbar() {
       }
       
     } catch (err: any) {
-      setProfileError(err.message || 'An error occurred.');
+      const msg = err.message || 'Failed to update profile.';
+      setProfileError(msg);
+      toast.error(msg);
     } finally {
       setProfileLoading(false);
     }

@@ -1,5 +1,6 @@
 'use client';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useToast } from '@/context/ToastContext';
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -8,6 +9,7 @@ import AnimatedBackground from '@/components/AnimatedBackground';
 
 export default function LoginPage() {
   const { t } = useLanguage();
+  const toast = useToast();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,7 +46,9 @@ export default function LoginPage() {
 
       if (!res.ok) {
         // Strapi returns an error object if auth fails
-        setError(t('auth.login_error'));
+        const errMsg = t('auth.login_error') || 'Invalid credentials';
+        setError(errMsg);
+        toast.error(errMsg);
         setLoading(false);
         return;
       }
@@ -58,10 +62,10 @@ export default function LoginPage() {
       const meData = await meRes.json();
       const userWithRole = { ...data.user, role: meData.role };
 
-      // Success! Save token and timestamp, then redirect based on role
+      // Success! Save token, then redirect based on role
       localStorage.setItem('jwt', data.jwt);
       localStorage.setItem('user', JSON.stringify(userWithRole));
-      localStorage.setItem('loginTimestamp', Date.now().toString());
+      toast.success(`Welcome back, ${userWithRole.username}!`, 'Login Successful');
       
       const roleType = meData.role?.type;
       if (roleType === 'admin') {
@@ -75,7 +79,9 @@ export default function LoginPage() {
       }
       
     } catch (err) {
-      setError(t('auth.unexpected_error'));
+      const errMsg = t('auth.unexpected_error') || 'An unexpected error occurred';
+      setError(errMsg);
+      toast.error(errMsg);
       setLoading(false);
     }
   };

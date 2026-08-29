@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
 import YouTube, { YouTubeEvent, YouTubePlayer } from 'react-youtube';
 
 interface CustomVideoPlayerProps {
@@ -20,9 +20,9 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
   onProgressSync,
   isStaff = false,
 }, ref) => {
-  const [player, setPlayer] = useState<YouTubePlayer | null>(null);
+  const playerRef = useRef<YouTubePlayer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [currentTime, setCurrentTime] = useState(initialLastWatched || 0);
   const [duration, setDuration] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -34,7 +34,7 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
   const [isMuted, setIsMuted] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   
-  const [maxWatched, setMaxWatched] = useState(initialMaxWatched);
+  const [maxWatched, setMaxWatched] = useState(initialMaxWatched || 0);
   const [completed, setCompleted] = useState(isCompleted);
 
   // Keep local completed state in sync with parent prop
@@ -49,24 +49,43 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
   const syncInterval = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Setup options to completely hide native UI
-  const opts = {
+  // Gracefully extract the 11-character ID if the database has a full URL
+  const extractVideoId = (urlOrId: string) => {
+    if (!urlOrId) return '';
+    if (urlOrId.length === 11 && !urlOrId.includes('http')) return urlOrId;
+    const match = urlOrId.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?#]+)/);
+    return match ? match[1] : urlOrId;
+  };
+
+  const parsedVideoId = extractVideoId(videoId);
+
+  // Memoize options so react-youtube NEVER destroys/re-creates the iframe on re-renders
+  const opts = useMemo(() => ({
     height: '100%',
     width: '100%',
     playerVars: {
-      autoplay: 1, // Instantly start playing (which also hides the title)
+      autoplay: 0,
       controls: 0,
       disablekb: 1,
       modestbranding: 1,
       rel: 0,
-      showinfo: 0, // Note: YouTube deprecated this, but autoplay hides it
+      showinfo: 0,
       iv_load_policy: 3,
       playsinline: 1,
-      start: initialLastWatched,
+      start: Math.floor(initialLastWatched || 0),
+      enablejsapi: 1,
+      origin: typeof window !== 'undefined' ? window.location.origin : undefined
     },
-  };
+  }), [parsedVideoId]); // Only re-create if the video changes!
+
+  useImperativeHandle(ref, () => ({
+    getPlayer: () => playerRef.current,
+    getCurrentTime: () => currentTime,
+    getDuration: () => duration,
+  }));
 
   const toggleMute = () => {
+    const player = playerRef.current;
     if (!player) return;
     if (isMuted) {
       player.unMute();
@@ -79,6 +98,7 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const player = playerRef.current;
     if (!player) return;
     const vol = parseFloat(e.target.value);
     setVolume(vol);
@@ -92,60 +112,99 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
     }
   };
 
-  const onReady = (event: YouTubeEvent) => {
-    setPlayer(event.target);
-    setDuration(event.target.getDuration());
+  const onReady = useCallback((event: YouTubeEvent) => {
+    playerRef.current = event.target;
+    const dur = event.target.getDuration();
+    if (dur > 0) setDuration(dur);
     setVolume(event.target.getVolume());
     setIsMuted(event.target.isMuted());
-    // Force play as a fallback for some browsers
-    event.target.playVideo();
-  };
+    if (initialLastWatched > 0) {
+      try {
+        event.target.seekTo(initialLastWatched, true);
+      } catch (e) {}
+    }
+  }, [initialLastWatched]);
 
-  const onStateChange = (event: YouTubeEvent) => {
-    // Playing
+  const onStateChange = useCallback((event: YouTubeEvent) => {
+    const player = event.target;
+    playerRef.current = player;
+    const dur = player.getDuration() || duration;
+    if (dur > 0 && dur !== duration) setDuration(dur);
+
+    // 1: Playing
     if (event.data === 1) {
       setIsPlaying(true);
-      const availableQualities = event.target.getAvailableQualityLevels();
+      const availableQualities = player.getAvailableQualityLevels();
       if (availableQualities && availableQualities.length > 0) {
         setQualities(availableQualities);
       }
-      setCurrentQuality(event.target.getPlaybackQuality());
+      setCurrentQuality(player.getPlaybackQuality());
     }
-    // Paused or Ended
-    else {
+    // 0: Ended
+    else if (event.data === 0) {
       setIsPlaying(false);
+      setCompleted(true);
+      setCurrentTime(dur);
+      setMaxWatched(dur);
+      onProgressSync(dur, dur, true, dur);
     }
-  };
-
-  const onPlaybackQualityChange = (event: YouTubeEvent) => {
-    setCurrentQuality(event.target.getPlaybackQuality());
-  };
-
-  // The main tracking loop
-  useEffect(() => {
-    if (!player || !isPlaying) return;
-
-    syncInterval.current = setInterval(async () => {
-      const time = await player.getCurrentTime();
-      setCurrentTime(time);
-
-      // Update max watched
-      if (time > maxWatched) setMaxWatched(time);
-
-      // Check for completion (100% watched, allowing 1s margin for floating point inaccuracies)
-      if (!completed && duration > 0 && time >= duration - 1) {
-        setCompleted(true);
+    // 2: Paused
+    else if (event.data === 2) {
+      setIsPlaying(false);
+      try {
+        const cur = player.getCurrentTime();
+        setCurrentTime(cur);
+        const newMax = Math.max(cur, maxWatched);
+        setMaxWatched(newMax);
+        const isDone = completed || (dur > 0 && (cur >= dur - 2 || (cur / dur) >= 0.98));
+        if (isDone && !completed) setCompleted(true);
+        onProgressSync(cur, newMax, isDone, dur);
+      } catch (e) {}
+    }
+    // -1 (unstarted), 3 (buffering), 5 (cued)
+    else {
+      if (event.data !== 3) {
+        setIsPlaying(false);
       }
+    }
+  }, [duration, maxWatched, completed, onProgressSync]);
 
-      // Sync with parent every ~5 seconds
-      onProgressSync(time, Math.max(time, maxWatched), completed || (time >= duration - 1), duration);
-      
+  const onPlaybackQualityChange = useCallback((event: YouTubeEvent) => {
+    setCurrentQuality(event.target.getPlaybackQuality());
+  }, []);
+
+  // Tracking loop while playing
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    syncInterval.current = setInterval(() => {
+      const player = playerRef.current;
+      if (!player) return;
+
+      try {
+        const time = player.getCurrentTime();
+        const dur = player.getDuration() || duration;
+        if (dur > 0 && dur !== duration) setDuration(dur);
+
+        setCurrentTime(time);
+
+        const newMax = Math.max(time, maxWatched);
+        if (time > maxWatched) setMaxWatched(time);
+
+        // Check for completion (within last 2 seconds or >= 98% watched)
+        const isDone = completed || (dur > 0 && (time >= dur - 2 || (time / dur) >= 0.98));
+        if (isDone && !completed) {
+          setCompleted(true);
+        }
+
+        onProgressSync(time, newMax, isDone, dur);
+      } catch (err) {}
     }, 1000);
 
     return () => {
       if (syncInterval.current) clearInterval(syncInterval.current);
     };
-  }, [player, isPlaying, maxWatched, completed, duration, playbackRate, onProgressSync]);
+  }, [isPlaying, maxWatched, completed, duration, onProgressSync]);
 
   // Idle controls logic
   const handleMouseMove = () => {
@@ -155,7 +214,7 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
     if (isPlaying) {
       hideControlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false);
-      }, 1500);
+      }, 2500);
     }
   };
 
@@ -169,7 +228,7 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
       setShowControls(true);
       if (hideControlsTimeoutRef.current) clearTimeout(hideControlsTimeoutRef.current);
     } else {
-      handleMouseMove(); // Start timer immediately upon playing
+      handleMouseMove();
     }
     
     return () => {
@@ -178,20 +237,32 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
   }, [isPlaying]);
 
   const togglePlay = () => {
+    const player = playerRef.current;
     if (!player) return;
-    if (isPlaying) player.pauseVideo();
-    else player.playVideo();
+    if (isPlaying) {
+      player.pauseVideo();
+    } else {
+      player.playVideo();
+    }
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const player = playerRef.current;
     if (!player) return;
     const newTime = parseFloat(e.target.value);
 
-    player.seekTo(newTime);
+    player.seekTo(newTime, true);
     setCurrentTime(newTime);
+    const dur = duration || player.getDuration();
+    const isDone = completed || (dur > 0 && (newTime >= dur - 2 || (newTime / dur) >= 0.98));
+    if (isDone && !completed) {
+      setCompleted(true);
+    }
+    onProgressSync(newTime, Math.max(newTime, maxWatched), isDone, dur);
   };
 
   const handleSpeedChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const player = playerRef.current;
     if (!player) return;
     const speed = parseFloat(e.target.value);
     setPlaybackRate(speed);
@@ -199,6 +270,7 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
   };
 
   const handleQualityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const player = playerRef.current;
     if (!player) return;
     const q = e.target.value;
     player.setPlaybackQuality(q);
@@ -227,16 +299,6 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
     const s = Math.floor(seconds % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
   };
-
-  // Gracefully extract the 11-character ID if the database has a full URL
-  const extractVideoId = (urlOrId: string) => {
-    if (!urlOrId) return '';
-    if (urlOrId.length === 11 && !urlOrId.includes('http')) return urlOrId;
-    const match = urlOrId.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?#]+)/);
-    return match ? match[1] : urlOrId;
-  };
-
-  const parsedVideoId = extractVideoId(videoId);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -276,12 +338,23 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
         />
       </div>
 
-      {/* Invisible overlay to block native clicking on iframe */}
-      <div className="absolute inset-0 z-10" onClick={togglePlay}></div>
+      {/* Click Overlay */}
+      <div className="absolute inset-0 z-10 cursor-pointer" onClick={togglePlay}>
+        {/* Big Center Play Button when paused */}
+        {!isPlaying && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[2px] transition-all">
+            <div className="w-20 h-20 rounded-full bg-emerald-500/90 text-white flex items-center justify-center shadow-2xl shadow-emerald-500/50 hover:scale-110 transition-transform">
+              <svg className="w-10 h-10 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Custom Controls Overlay */}
       <div 
-        className={`absolute bottom-0 left-0 right-0 z-20 p-4 bg-gradient-to-t from-black/90 to-transparent transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute bottom-0 left-0 right-0 z-20 p-4 bg-gradient-to-t from-black/90 via-black/60 to-transparent transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       >
         
         {/* Timeline */}
@@ -348,7 +421,7 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
           </div>
           
           <div className="flex items-center gap-4 text-xs font-semibold">
-            {/* Quality Control (Only show if multiple qualities exist) */}
+            {/* Quality Control */}
             {qualities.length > 1 && (
               <select
                 value={currentQuality}
@@ -399,12 +472,10 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
               className="hover:text-emerald-400 transition-colors focus:outline-none ml-2"
             >
               {isFullscreen ? (
-                // Exit Fullscreen Icon
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
                 </svg>
               ) : (
-                // Enter Fullscreen Icon
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
                 </svg>
@@ -417,11 +488,5 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
     </div>
   );
 });
+
 export default CustomVideoPlayer;
-
-
-
-
-
-
-

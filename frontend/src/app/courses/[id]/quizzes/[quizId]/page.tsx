@@ -3,8 +3,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useToast } from '@/context/ToastContext';
 
 export default function QuizTakingPage() {
+  const toast = useToast();
   const params = useParams();
   const router = useRouter();
   const courseId = params.id as string;
@@ -147,28 +149,30 @@ export default function QuizTakingPage() {
       }
 
       if (finalAttempt.violationsLog?.length >= 3) {
-         alert(`Exam Cancelled.\nYou received 0 marks due to maximum violations.`);
+        toast.error('Exam Cancelled. You received 0 marks due to maximum violations.', 'Exam Terminated');
       } else {
-         alert(`Quiz submitted successfully!\nFinal Score: ${finalAttempt.score}/${totalQuestions}\nViolations Deducted: ${finalAttempt.violationScore}`);
+        toast.success(`Final Score: ${finalAttempt.score}/${totalQuestions} (Violations Deducted: ${finalAttempt.violationScore})`, 'Quiz Submitted Successfully!');
       }
       
-      router.push(`/courses/${courseId}/quizzes`);
+      setTimeout(() => {
+        router.push(`/courses/${courseId}/quizzes`);
+      }, 1000);
 
     } catch (err) {
       console.error(err);
-      alert("Error submitting quiz. Please check console.");
+      toast.error('Error submitting quiz. Please check your connection and try again.');
       setSubmitting(false);
     }
-  }, [answers, quiz, attemptId, courseId, quizId, router]);
+  }, [answers, quiz, attemptId, courseId, quizId, router, toast]);
 
   useEffect(() => {
     if (violationCount >= 3 && !submitting && attemptId) {
+      toast.error("Maximum violations reached. Submitting quiz now...", "Exam Disqualified");
       setTimeout(() => {
-        alert("Exam cancelled: Maximum violations reached.");
         submitQuiz();
-      }, 500);
+      }, 800);
     }
-  }, [violationCount, submitting, submitQuiz, attemptId]);
+  }, [violationCount, submitting, submitQuiz, attemptId, toast]);
 
   useEffect(() => {
     if (!started || submitting || !attemptId) return;
@@ -244,7 +248,7 @@ export default function QuizTakingPage() {
     } catch (err) {
       console.error(err);
       setSubmitting(false);
-      alert("Failed to start quiz. Please try again and ensure browser allows full-screen.");
+      toast.error("Failed to start quiz. Please try again and ensure your browser allows fullscreen mode.");
     }
   };
 

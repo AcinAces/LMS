@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import DataTable, { ColumnDef } from '@/components/admin/DataTable';
 import DynamicFormModal, { FormField } from '@/components/admin/DynamicFormModal';
+import { useToast } from '@/context/ToastContext';
 
 export default function AdminUsersPage() {
+  const toast = useToast();
   const [users, setUsers] = useState<any[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,11 +63,50 @@ export default function AdminUsersPage() {
   ];
 
   const fields: FormField[] = [
-    { key: 'username', label: 'Username', type: 'text', required: true },
-    { key: 'email', label: 'Email', type: 'text', required: true },
-    ...(editingData?.id ? [] : [{ key: 'password', label: 'Password', type: 'password' as const, required: true }]),
-    { key: 'role', label: 'Role', type: 'select', options: roles.map(r => ({ value: r.id, label: r.name })) },
-    { key: 'blocked', label: 'Blocked (prevent login)', type: 'boolean' }
+    { 
+      key: 'username', 
+      label: 'Username', 
+      type: 'text', 
+      required: true,
+      placeholder: 'e.g. john_doe',
+      minLength: 3,
+      maxLength: 30,
+      pattern: '^[a-zA-Z0-9_.-]{3,30}$',
+      hint: 'Alphanumeric, dots, dashes and underscores only (3–30 characters, no spaces)'
+    },
+    { 
+      key: 'email', 
+      label: 'Email Address', 
+      type: 'email', 
+      required: true,
+      placeholder: 'name@example.com',
+      hint: 'Valid email address format (e.g. user@domain.com)'
+    },
+    ...(editingData?.id ? [] : [{ 
+      key: 'password', 
+      label: 'Password', 
+      type: 'password' as const, 
+      required: true,
+      placeholder: '••••••••',
+      minLength: 6,
+      hint: 'Minimum 6 characters for security'
+    }]),
+    { 
+      key: 'role', 
+      label: 'User Role', 
+      type: 'select', 
+      required: true,
+      placeholder: 'Select a user role...',
+      options: roles.map(r => ({ value: r.id, label: r.name })),
+      hint: 'Defines dashboard permissions (Student, Instructor, Content Manager, Admin)'
+    },
+    { 
+      key: 'blocked', 
+      label: 'Account Status', 
+      type: 'boolean',
+      placeholder: 'Block this account (prevents login)',
+      hint: 'When enabled, the user will be blocked from logging into the platform'
+    }
   ];
 
   const handleSubmit = async (formData: any) => {
@@ -110,13 +151,18 @@ export default function AdminUsersPage() {
   const handleDelete = async (row: any) => {
     if (!confirm(`Are you sure you want to delete user "${row.username}"?`)) return;
     
-    const jwt = localStorage.getItem('jwt');
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/${row.id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${jwt}` }
-    });
-    
-    fetchUsersAndRoles();
+    try {
+      const jwt = localStorage.getItem('jwt');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/${row.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      });
+      if (!res.ok) throw new Error('Failed to delete user');
+      toast.success(`User "${row.username}" deleted.`);
+      fetchUsersAndRoles();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete user');
+    }
   };
 
   if (loading) return <div>Loading users...</div>;

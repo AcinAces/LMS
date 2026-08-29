@@ -26,44 +26,6 @@ async function getAuthenticatedUser(ctx: any, strapi: any) {
 }
 
 export default {
-  async checkUsername(ctx: any) {
-    try {
-      const { username } = ctx.request.body;
-      
-      if (!username) {
-        return ctx.badRequest('Username is required');
-      }
-
-      const user = await strapi.db.query('plugin::users-permissions.user').findOne({
-        where: { username },
-      });
-
-      if (user) {
-        return ctx.send({ available: false });
-      }
-
-      return ctx.send({ available: true });
-    } catch (err) {
-      return ctx.internalServerError('Something went wrong');
-    }
-  },
-
-  async getSiteStats(ctx: any) {
-    try {
-      const studentCount = await strapi.db.query('plugin::users-permissions.user').count({
-        where: {
-          role: {
-            type: 'authenticated'
-          }
-        }
-      });
-      const courseCount = await strapi.db.query('api::course.course').count();
-      return ctx.send({ studentCount, courseCount });
-    } catch (err) {
-      return ctx.internalServerError('Something went wrong');
-    }
-  },
-
   async getEnrolledStudents(ctx: any) {
     const strapiInstance = (global as any).strapi;
     const user = await getAuthenticatedUser(ctx, strapiInstance);
@@ -151,13 +113,21 @@ export default {
   async getStudentDetailedReport(ctx: any) {
     const strapiInstance = (global as any).strapi;
     const user = await getAuthenticatedUser(ctx, strapiInstance);
-    if (!user || !['admin', 'content_manager', 'instructor'].includes(user.role?.type)) {
-      return ctx.unauthorized('Access denied. Staff access required.');
+    if (!user) {
+      return ctx.unauthorized('Authentication required.');
     }
 
-    const { studentId } = ctx.params;
-    if (!studentId) {
-      return ctx.badRequest('Student ID is required');
+    const roleType = user.role?.type;
+    const isStaff = ['admin', 'content_manager', 'instructor'].includes(roleType);
+    const isStudent = roleType === 'authenticated';
+
+    if (!isStaff && !isStudent) {
+      return ctx.forbidden('Access denied.');
+    }
+
+    let { studentId } = ctx.params;
+    if (!studentId || studentId === 'me' || studentId === 'self') {
+      studentId = String(user.id);
     }
 
     try {
@@ -174,6 +144,11 @@ export default {
 
       if (!student) {
         return ctx.notFound('Student not found');
+      }
+
+      // If user is a student, enforce that they can only view their own progress
+      if (isStudent && student.id !== user.id) {
+        return ctx.forbidden('You can only view your own progress report.');
       }
 
       const isInstructor = user.role?.type === 'instructor';
@@ -386,4 +361,3 @@ export default {
     }
   }
 };
-

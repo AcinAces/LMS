@@ -42,15 +42,11 @@ export default function CoursesPage() {
         const headers: HeadersInit = {};
         if (jwt) headers['Authorization'] = `Bearer ${jwt}`;
         
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?populate[0]=courseAuthor&populate[1]=lessons&populate[2]=reviews&populate[3]=reviews.author`, {
+        let res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?populate[0]=courseAuthor&populate[1]=lessons&populate[2]=reviews&populate[3]=reviews.author`, {
           headers, cache: 'no-store' });
 
         if (res.status === 401) {
-          localStorage.removeItem('jwt');
-          localStorage.removeItem('user');
-          localStorage.removeItem('loginTimestamp');
-          router.push('/login');
-          return;
+          res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses?populate[0]=courseAuthor&populate[1]=lessons&populate[2]=reviews&populate[3]=reviews.author`, { cache: 'no-store' });
         }
         
         if (!res.ok) throw new Error('Failed to fetch');

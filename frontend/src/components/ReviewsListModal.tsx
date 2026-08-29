@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useToast } from '@/context/ToastContext';
 
 interface Review {
   id: number;
@@ -45,6 +46,8 @@ export default function ReviewsListModal({ courseTitle, reviews, onClose }: Revi
     } catch (e) {}
   }, []);
 
+  const toast = useToast();
+
   const handleDeleteReview = async (review: Review) => {
     if (!confirm(t('review.delete_confirm'))) return;
     try {
@@ -56,12 +59,13 @@ export default function ReviewsListModal({ courseTitle, reviews, onClose }: Revi
         headers: { 'Authorization': `Bearer ${jwt}` }
       });
       if (res.ok) {
-        window.location.reload();
+        toast.success('Review deleted successfully');
+        setLocalReviews(prev => prev.filter(r => (r.documentId || r.id) !== deleteId));
       } else {
-        alert('Failed to delete review.');
+        toast.error('Failed to delete review.');
       }
     } catch (e) {
-      alert('Error deleting review.');
+      toast.error('Error deleting review.');
     }
   };
 

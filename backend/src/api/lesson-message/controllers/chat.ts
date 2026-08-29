@@ -1,55 +1,127 @@
+async function getAuthUser(ctx: any) {
+  let user = ctx.state.user;
+  if (!user) {
+    const authHeader = ctx.request.header.authorization || ctx.get('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const decoded = await (strapi as any).plugin('users-permissions').service('jwt').verify(token);
+        if (decoded?.id) {
+          user = await strapi.db.query('plugin::users-permissions.user').findOne({
+            where: { id: decoded.id },
+            populate: ['role']
+          });
+        }
+      } catch (e) {}
+    }
+  } else if (!user.role?.type) {
+    try {
+      user = await strapi.db.query('plugin::users-permissions.user').findOne({
+        where: { id: user.id },
+        populate: ['role']
+      });
+    } catch (e) {}
+  }
+  return user;
+}
+
+async function getLessonWithAuthor(lessonDocIdOrId: string | number) {
+  return await strapi.db.query('api::lesson.lesson').findOne({
+    where: {
+      $or: [
+        { documentId: String(lessonDocIdOrId) },
+        { id: isNaN(Number(lessonDocIdOrId)) ? -1 : Number(lessonDocIdOrId) }
+      ]
+    },
+    populate: {
+      course: {
+        populate: ['courseAuthor']
+      }
+    }
+  });
+}
+
+function checkChatPermissions(user: any, lesson: any) {
+  if (!user || !lesson) {
+    return { isAllowed: false, isAuthor: false, isStudent: false };
+  }
+
+  const roleType = user.role?.type;
+  const course = lesson.course;
+  const author = course?.courseAuthor;
+  const authorId = typeof author === 'object' ? author?.id : author;
+  const authorDocId = typeof author === 'object' ? author?.documentId : null;
+
+  const isAuthor = roleType === 'instructor' && (
+    user.id === authorId || (authorDocId && user.documentId === authorDocId)
+  );
+
+  const isStudent = roleType === 'authenticated';
+
+  return {
+    isAllowed: isAuthor || isStudent,
+    isAuthor,
+    isStudent,
+    courseAuthorId: authorId
+  };
+}
+
 export default {
   async getChat(ctx: any) {
     const { lessonId } = ctx.params;
-    const user = ctx.state.user;
+    const user = await getAuthUser(ctx);
     if (!user) return ctx.unauthorized();
 
-    let studentId = user.id;
+    const lesson = await getLessonWithAuthor(lessonId);
+    if (!lesson) {
+      return { data: [] };
+    }
 
-    if (['admin', 'content_manager', 'instructor'].includes(user.role?.type)) {
-      if (ctx.query.studentId) {
-        studentId = parseInt(ctx.query.studentId, 10);
-      } else {
+    const { isAllowed, isAuthor, isStudent } = checkChatPermissions(user, lesson);
+    if (!isAllowed) {
+      return ctx.forbidden('Access denied. Chat is strictly 1-to-1 between the course author and enrolled students.');
+    }
+
+    let targetStudentId: number | null = null;
+
+    if (isAuthor) {
+      if (!ctx.query.studentId) {
         return { data: [] };
       }
+      targetStudentId = parseInt(ctx.query.studentId, 10);
+    } else if (isStudent) {
+      targetStudentId = user.id;
     }
-    const lesson = await strapi.db.query('api::lesson.lesson').findOne({
-      where: { documentId: lessonId }
-    });
-    
-    if (!lesson) {
+
+    if (!targetStudentId) {
       return { data: [] };
     }
 
     const messages = await strapi.db.query('api::lesson-message.lesson-message').findMany({
       where: {
         lesson: lesson.id,
-        student: studentId
+        student: targetStudentId
       },
       populate: ['sender', 'student'],
       orderBy: { createdAt: 'asc' }
     });
 
-    console.log(`[DIAGNOSTICS - getChat] Found messages count:`, messages?.length);
-
-    return { data: messages };
+    return { data: messages || [] };
   },
 
   async getStudents(ctx: any) {
     const { lessonId } = ctx.params;
-    const user = ctx.state.user;
-    if (!user || !['admin', 'content_manager', 'instructor'].includes(user.role?.type)) {
-      return ctx.unauthorized();
-    }
+    const user = await getAuthUser(ctx);
+    if (!user) return ctx.unauthorized();
 
-    console.log(`[DIAGNOSTICS - getStudents] lessonId (docId): ${lessonId}`);
-
-    const lesson = await strapi.db.query('api::lesson.lesson').findOne({
-      where: { documentId: lessonId }
-    });
-    
+    const lesson = await getLessonWithAuthor(lessonId);
     if (!lesson) {
       return { data: [] };
+    }
+
+    const { isAuthor } = checkChatPermissions(user, lesson);
+    if (!isAuthor) {
+      return ctx.forbidden('Only the course author can view student queries for this lesson.');
     }
 
     const messages = await strapi.db.query('api::lesson-message.lesson-message').findMany({
@@ -69,13 +141,10 @@ export default {
       
       if (msg.student) {
         const student = studentsMap.get(msg.student.id);
-        // Keep the most recent message timestamp
         if (new Date(msg.createdAt) > new Date(student.lastMessageAt)) {
           student.lastMessageAt = msg.createdAt;
         }
         
-        // If there's ANY unread message where sender is NOT the current user
-        // SQLite booleans can be strangely cast in raw queries
         const isMsgUnread = (
           msg.isRead === false || 
           msg.isRead === 0 || 
@@ -103,22 +172,39 @@ export default {
   async sendMessage(ctx: any) {
     const { lessonId } = ctx.params;
     const { content, studentId } = ctx.request.body;
-    const user = ctx.state.user;
+    const user = await getAuthUser(ctx);
     if (!user) return ctx.unauthorized();
 
-    const lesson = await strapi.db.query('api::lesson.lesson').findOne({
-      where: { documentId: lessonId }
-    });
+    if (!content || !content.trim()) {
+      return ctx.badRequest('Message content cannot be empty.');
+    }
+
+    const lesson = await getLessonWithAuthor(lessonId);
     if (!lesson) return ctx.notFound('Lesson not found');
 
-    const isStaff = ['admin', 'content_manager', 'instructor'].includes(user.role?.type);
-    
-    // Determine the student thread this belongs to
-    const targetStudentId = isStaff ? (studentId || user.id) : user.id;
+    const { isAllowed, isAuthor, isStudent } = checkChatPermissions(user, lesson);
+    if (!isAllowed) {
+      return ctx.forbidden('Access denied. Only the course author and enrolled students can send messages.');
+    }
+
+    let targetStudentId: number | null = null;
+
+    if (isAuthor) {
+      if (!studentId) {
+        return ctx.badRequest('studentId is required when instructor sends a message.');
+      }
+      targetStudentId = parseInt(studentId, 10);
+    } else if (isStudent) {
+      targetStudentId = user.id;
+    }
+
+    if (!targetStudentId) {
+      return ctx.badRequest('Invalid student target for message.');
+    }
 
     const message = await strapi.db.query('api::lesson-message.lesson-message').create({
       data: {
-        content,
+        content: content.trim(),
         isRead: false,
         lesson: lesson.id,
         student: targetStudentId,
@@ -132,29 +218,36 @@ export default {
 
   async markRead(ctx: any) {
     const { lessonId } = ctx.params;
-    const user = ctx.state.user;
+    const user = await getAuthUser(ctx);
     if (!user) return ctx.unauthorized();
 
-    let studentId = user.id;
-    const isStaff = ['admin', 'content_manager', 'instructor'].includes(user.role?.type);
-    
-    if (isStaff && ctx.request.body.studentId) {
-      studentId = ctx.request.body.studentId;
-    }
-
-    const lesson = await strapi.db.query('api::lesson.lesson').findOne({
-      where: { documentId: lessonId }
-    });
-    
+    const lesson = await getLessonWithAuthor(lessonId);
     if (!lesson) {
       return { success: false };
     }
 
-    // Find messages in this thread where the sender is NOT the current user and isRead is false
+    const { isAllowed, isAuthor, isStudent } = checkChatPermissions(user, lesson);
+    if (!isAllowed) {
+      return ctx.forbidden('Access denied.');
+    }
+
+    let targetStudentId: number | null = null;
+    if (isAuthor) {
+      if (ctx.request.body.studentId) {
+        targetStudentId = parseInt(ctx.request.body.studentId, 10);
+      }
+    } else if (isStudent) {
+      targetStudentId = user.id;
+    }
+
+    if (!targetStudentId) {
+      return { success: false };
+    }
+
     const unreadMessages = await strapi.db.query('api::lesson-message.lesson-message').findMany({
       where: {
         lesson: lesson.id,
-        student: studentId,
+        student: targetStudentId,
         isRead: { $in: [false, 0, '0', 'false', null] },
         sender: { $ne: user.id }
       }
@@ -171,23 +264,30 @@ export default {
   },
 
   async getNotifications(ctx: any) {
-    const user = ctx.state.user;
+    const user = await getAuthUser(ctx);
     if (!user) return ctx.unauthorized();
 
-    const isStaff = ['admin', 'content_manager', 'instructor'].includes(user.role?.type);
+    const roleType = user.role?.type;
+    const isInstructor = roleType === 'instructor';
+    const isStudent = roleType === 'authenticated';
+
+    if (!isInstructor && !isStudent) {
+      // Admins, Content Managers, and other staff do not receive 1-to-1 author/student notifications
+      return { data: { unread: [], marked: [] } };
+    }
 
     const filters: any = {
       $not: { sender: { id: user.id } }
     };
 
-    if (!isStaff) {
+    if (isStudent) {
       filters.student = { id: user.id };
-    } else {
-      // Must be instructor of the course
+    } else if (isInstructor) {
+      // Strictly filter to lessons of courses authored by THIS instructor
       filters.lesson = { course: { courseAuthor: { id: user.id } } };
     }
 
-    const messages = await strapi.entityService.findMany('api::lesson-message.lesson-message', {
+    const messages = await (strapi.entityService as any).findMany('api::lesson-message.lesson-message', {
       filters,
       populate: {
         lesson: { populate: ['course'] },
@@ -196,7 +296,7 @@ export default {
       },
       sort: { createdAt: 'desc' } as any,
       limit: 300
-    } as any);
+    });
 
     const unreadMap = new Map();
     const markedMap = new Map();
@@ -204,7 +304,7 @@ export default {
     (messages || []).forEach((msg: any) => {
       if (!msg.lesson || !msg.lesson.course) return;
 
-      const key = isStaff ? `${msg.lesson.id}-${msg.student?.id}` : `${msg.lesson.id}`;
+      const key = isInstructor ? `${msg.lesson.id}-${msg.student?.id}` : `${msg.lesson.id}`;
       const isMsgUnread = (
         msg.isRead === false || 
         msg.isRead === 0 || 
@@ -217,16 +317,16 @@ export default {
       if (unreadMap.has(key)) return;
       
       if (!targetMap.has(key)) {
-        const title = isStaff 
-          ? `${msg.student?.username || 'A student'} has a question on Lesson ${msg.lesson.order || msg.lesson.title} of ${msg.lesson.course?.courseTitle || 'Course'}`
-          : `You received a reply for your question on Lesson ${msg.lesson.order || msg.lesson.title}`;
+        const title = isInstructor 
+          ? `${msg.student?.username || 'A student'} asked a question on Lesson ${msg.lesson.order || msg.lesson.title} of ${msg.lesson.course?.courseTitle || 'Course'}`
+          : `You received a reply from the course author on Lesson ${msg.lesson.order || msg.lesson.title}`;
           
         targetMap.set(key, {
           type: 'lesson_chat',
           title,
           lessonId: msg.lesson.documentId,
           courseId: msg.lesson.course.documentId,
-          studentId: isStaff ? msg.student?.id : null,
+          studentId: isInstructor ? msg.student?.id : null,
           createdAt: msg.createdAt
         });
       }
@@ -238,5 +338,3 @@ export default {
     return { data: { unread, marked } };
   }
 };
-
-

@@ -40,6 +40,8 @@ export default function LessonPage() {
   const [allProgress, setAllProgress] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isStaff, setIsStaff] = useState(false);
+  const [isCourseAuthor, setIsCourseAuthor] = useState(false);
+  const [isStudent, setIsStudent] = useState(false);
 
   // We use a ref to prevent spamming the backend with sync requests
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -55,24 +57,37 @@ export default function LessonPage() {
         }
 
         const userStr = localStorage.getItem('user');
-        const roleType = userStr ? JSON.parse(userStr).role?.type : null;
+        const currentUser = userStr ? JSON.parse(userStr) : null;
+        const roleType = currentUser?.role?.type;
         const staff = roleType === 'admin' || roleType === 'content_manager' || roleType === 'instructor';
+        const student = roleType === 'authenticated';
         setIsStaff(staff);
+        setIsStudent(student);
 
         const headers = { 'Authorization': `Bearer ${jwt}` };
 
-        // 1. Fetch the course and all its lessons
-        const courseRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses/${params.id}?populate[0]=lessons`, { headers });
+        // 1. Fetch the course with lessons and courseAuthor populated
+        const courseRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/courses/${params.id}?populate[0]=lessons&populate[1]=courseAuthor`, { headers });
         if (!courseRes.ok) throw new Error('Failed to fetch course');
         const courseData = await courseRes.json();
         setCourse(courseData.data);
+
+        // Verify if current user is the actual author of this course
+        const authorId = courseData.data?.courseAuthor?.id;
+        const authorDocId = courseData.data?.courseAuthor?.documentId;
+        const isAuthor = roleType === 'instructor' && (
+          (authorId && currentUser?.id === authorId) ||
+          (authorDocId && currentUser?.documentId === authorDocId) ||
+          (courseData.data?.courseAuthor?.username && currentUser?.username === courseData.data?.courseAuthor?.username)
+        );
+        setIsCourseAuthor(isAuthor);
 
         // Find the current lesson in the course
         const lesson = courseData.data?.lessons?.find((l: any) => l.documentId === params.lessonId);
         if (!lesson) throw new Error('Lesson not found');
         setCurrentLesson(lesson);
 
-        // 2. Fetch the user's progress for this course's lessons (if not staff)
+        // 2. Fetch the user's progress for this course's lessons (if student)
         if (!staff) {
           const progRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lesson-progresses?populate[0]=lesson`, { headers });
           if (progRes.ok) {
@@ -120,7 +135,7 @@ export default function LessonPage() {
         }).catch(console.error);
       }
       
-      // Optimitiscally update local state so we don't spam the endpoint
+      // Optimistically update local state so we don't spam the endpoint
       if (currentLesson) {
         setCurrentLesson({ ...currentLesson, durationInSeconds: Math.floor(duration) });
       }
@@ -129,11 +144,43 @@ export default function LessonPage() {
     if (isStaff) return; // Do not sync progress for staff
     if (!jwt) return;
 
-    // Throttle the sync to avoid API spam (e.g., sync every 5 seconds or if completion status changes)
-    const hasCompletedChanged = lastSyncedData.current?.completed !== completed;
+    // Optimistically update local progress state
+    setProgress((prev: any) => ({
+      ...prev,
+      lastWatchedPosition: Math.floor(lastWatched),
+      maxWatchedPosition: Math.max(prev?.maxWatchedPosition || 0, Math.floor(maxWatched)),
+      completed: completed || prev?.completed || false
+    }));
+
+    if (completed) {
+      setAllProgress((prev: any[]) => {
+        const index = prev.findIndex((p: any) => p.lesson?.documentId === params.lessonId);
+        const updatedItem = {
+          lesson: { documentId: params.lessonId },
+          lastWatchedPosition: Math.floor(lastWatched),
+          maxWatchedPosition: Math.max(index >= 0 ? prev[index].maxWatchedPosition || 0 : 0, Math.floor(maxWatched)),
+          completed: true
+        };
+        if (index >= 0) {
+          const copy = [...prev];
+          copy[index] = { ...copy[index], ...updatedItem };
+          return copy;
+        } else {
+          return [...prev, updatedItem];
+        }
+      });
+    }
+
+    // Throttle sync to avoid API spam unless completed status flipped to true
+    const hasCompletedChanged = !lastSyncedData.current?.completed && completed;
     
     if (syncTimeoutRef.current && !hasCompletedChanged) {
-      return; // A sync is already scheduled and completion hasn't changed
+      return;
+    }
+
+    if (syncTimeoutRef.current && hasCompletedChanged) {
+      clearTimeout(syncTimeoutRef.current);
+      syncTimeoutRef.current = null;
     }
 
     lastSyncedData.current = { lastWatched, maxWatched, completed };
@@ -164,8 +211,7 @@ export default function LessonPage() {
     if (hasCompletedChanged) {
       syncToBackend();
     } else {
-      // Otherwise debounce for 5 seconds
-      syncTimeoutRef.current = setTimeout(syncToBackend, 5000);
+      syncTimeoutRef.current = setTimeout(syncToBackend, 3000);
     }
   }, [params.lessonId, isStaff, currentLesson]);
 
@@ -372,13 +418,15 @@ export default function LessonPage() {
           </div>
 
         </div>
-        <LessonChat 
-          lessonId={currentLesson.documentId} 
-          courseId={course.documentId} 
-          lessonTitle={currentLesson.title}
-          lessonOrder={currentLesson.order}
-          isStaff={isStaff} 
-        />
+        {(isCourseAuthor || isStudent) && (
+          <LessonChat 
+            lessonId={currentLesson.documentId} 
+            courseId={course.documentId} 
+            lessonTitle={currentLesson.title}
+            lessonOrder={currentLesson.order}
+            isAuthor={isCourseAuthor} 
+          />
+        )}
       </div>
     </div>
   );

@@ -44,15 +44,20 @@ export default factories.createCoreController('api::lesson-progress.lesson-progr
         }
       });
 
+      const isCompleted = completed === true;
+
       if (existing && existing.length > 0) {
         // Update existing
-        const progressId = existing[0].documentId;
+        const progressRecord = existing[0];
+        const progressId = progressRecord.documentId;
+        const nowCompleted: boolean = isCompleted || Boolean(progressRecord.completed);
         const updated = await strapi.documents('api::lesson-progress.lesson-progress').update({
           documentId: progressId,
           data: {
             lastWatchedPosition: lastWatchedPosition,
-            maxWatchedPosition: Math.max(maxWatchedPosition || 0, existing[0].maxWatchedPosition || 0),
-            completed: completed || existing[0].completed,
+            maxWatchedPosition: Math.max(maxWatchedPosition || 0, progressRecord.maxWatchedPosition || 0),
+            completed: nowCompleted,
+            ...(nowCompleted && !progressRecord.completedAt ? { completedAt: new Date() } : {})
           },
           status: 'published'
         });
@@ -65,7 +70,8 @@ export default factories.createCoreController('api::lesson-progress.lesson-progr
             student: user.documentId || user.id,
             lastWatchedPosition: lastWatchedPosition || 0,
             maxWatchedPosition: maxWatchedPosition || 0,
-            completed: completed || false,
+            completed: isCompleted,
+            ...(isCompleted ? { completedAt: new Date() } : {})
           },
           status: 'published'
         });
