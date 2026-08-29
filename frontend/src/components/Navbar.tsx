@@ -695,6 +695,13 @@ export default function Navbar() {
                 </Link>
               </div>
             )}
+
+            <div className="h-px bg-white/10 my-2"></div>
+
+            <div className="px-4 py-2 flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Language</span>
+              <LanguageSelector />
+            </div>
           </div>
         )}
       </nav>
