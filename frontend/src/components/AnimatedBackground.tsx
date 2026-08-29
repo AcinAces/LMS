@@ -63,8 +63,8 @@ class Particle {
     this.y = Math.random() * canvasHeight;
     this.text = SYNTAX_SNIPPETS[Math.floor(Math.random() * SYNTAX_SNIPPETS.length)];
     
-    // Balanced font size for clean readability without clutter
-    this.size = Math.random() * 5 + 9; // 9px to 14px
+    // Proportional crisp font sizing
+    this.size = Math.random() * 4 + 10; // 10px to 14px
     
     // Organic gentle drift
     this.baseSpeedX = (Math.random() - 0.5) * 0.2;
@@ -85,7 +85,7 @@ class Particle {
     this.sineSpeed = Math.random() * 0.015 + 0.005;
   }
 
-  update(mouseX: number, mouseY: number, time: number) {
+  update(mouseX: number, mouseY: number, time: number, boundsWidth: number, boundsHeight: number) {
     // Subtle sine wave motion
     this.sineOffset += this.sineSpeed;
     const waveX = Math.sin(this.sineOffset) * 0.15;
@@ -99,12 +99,12 @@ class Particle {
       const dx = this.x - mouseX;
       const dy = this.y - mouseY;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      const repelRadius = 160;
+      const repelRadius = 140;
       
       if (distance < repelRadius) {
         const force = (repelRadius - distance) / repelRadius;
-        const targetSpeedX = (dx / (distance || 1)) * force * 2.2;
-        const targetSpeedY = (dy / (distance || 1)) * force * 2.2;
+        const targetSpeedX = (dx / (distance || 1)) * force * 2.0;
+        const targetSpeedY = (dy / (distance || 1)) * force * 2.0;
         
         this.speedX += (targetSpeedX - this.speedX) * 0.08;
         this.speedY += (targetSpeedY - this.speedY) * 0.08;
@@ -120,16 +120,16 @@ class Particle {
     this.x += this.speedX;
     this.y += this.speedY;
 
-    // Wrap around screen seamlessly
-    if (this.y < -40) this.y = window.innerHeight + 40;
-    if (this.y > window.innerHeight + 40) this.y = -40;
-    if (this.x < -180) this.x = window.innerWidth + 180;
-    if (this.x > window.innerWidth + 180) this.x = -180;
+    // Wrap around screen seamlessly using dynamic bounds
+    if (this.y < -40) this.y = boundsHeight + 40;
+    if (this.y > boundsHeight + 40) this.y = -40;
+    if (this.x < -180) this.x = boundsWidth + 180;
+    if (this.x > boundsWidth + 180) this.x = -180;
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${Math.max(0.02, this.opacity)})`;
-    ctx.font = `500 ${this.size}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace`;
+    ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${Math.max(0.04, this.opacity)})`;
+    ctx.font = `500 ${Math.round(this.size)}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`;
     ctx.fillText(this.text, this.x, this.y);
   }
 }
@@ -148,18 +148,35 @@ export default function AnimatedBackground() {
     let particles: Particle[] = [];
     let mouse = { x: -1, y: -1 };
     let time = 0;
+    let currentWidth = 0;
+    let currentHeight = 0;
 
     const handleResize = () => {
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      ctx.scale(dpr, dpr);
-      
+      // Use documentElement dimensions for 100% accurate viewport bounds on mobile
+      const width = document.documentElement.clientWidth || window.innerWidth || 360;
+      const height = window.innerHeight || document.documentElement.clientHeight || 640;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      currentWidth = width;
+      currentHeight = height;
+
+      // Set physical canvas pixel buffer
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+
+      // Set CSS dimensions to 1:1 match physical display
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+
+      // Reset and set clean transform matrix without compounding scales
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Adjust particle count based on screen real estate
       particles = [];
-      // Adjust density based on screen size
-      const numParticles = Math.floor((window.innerWidth * window.innerHeight) / 16000);
-      for (let i = 0; i < Math.max(25, Math.min(numParticles, 75)); i++) {
-        particles.push(new Particle(window.innerWidth, window.innerHeight));
+      const numParticles = Math.floor((width * height) / 18000);
+      const count = Math.max(18, Math.min(numParticles, 65));
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(width, height));
       }
     };
 
@@ -181,10 +198,10 @@ export default function AnimatedBackground() {
 
     const render = () => {
       time += 1;
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      ctx.clearRect(0, 0, currentWidth, currentHeight);
 
       for (let i = 0; i < particles.length; i++) {
-        particles[i].update(mouse.x, mouse.y, time);
+        particles[i].update(mouse.x, mouse.y, time, currentWidth, currentHeight);
         particles[i].draw(ctx);
       }
 
@@ -204,8 +221,7 @@ export default function AnimatedBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full -z-10 bg-slate-950 pointer-events-none"
-      style={{ width: '100%', height: '100%' }}
+      className="fixed inset-0 pointer-events-none -z-10 bg-slate-950"
     />
   );
 }
