@@ -1,6 +1,5 @@
 'use client';
 import Link from 'next/link';
-
 import { useLanguage } from '@/i18n/LanguageContext';
 
 export default function Footer() {
@@ -8,11 +7,11 @@ export default function Footer() {
   return (
     <footer className="bg-slate-950/80 border-t border-white/5 pt-16 pb-8 px-6 mt-auto">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
           {/* Brand */}
           <div className="md:col-span-2">
             <Link href="/" className="inline-block text-2xl font-black text-white tracking-tighter mb-4">
-              Acin's<span className="text-emerald-400">LMS</span>
+              Acin&apos;s<span className="text-emerald-400">LMS</span>
             </Link>
             <p className="text-slate-400 text-sm max-w-md leading-relaxed mb-6">
               {t('footer.description')}
@@ -36,18 +35,6 @@ export default function Footer() {
               <li><Link href="/" className="hover:text-emerald-400 transition-colors">{t('footer.home')}</Link></li>
               <li><Link href="/courses" className="hover:text-emerald-400 transition-colors">{t('footer.all_courses')}</Link></li>
               <li><Link href="/blogs" className="hover:text-emerald-400 transition-colors">{t('footer.blogs')}</Link></li>
-              <li><Link href="/track-progress" className="hover:text-emerald-400 transition-colors">{t('footer.my_progress')}</Link></li>
-            </ul>
-          </div>
-
-          {/* Legal */}
-          <div>
-            <h4 className="text-white font-bold mb-4">{t('footer.legal')}</h4>
-            <ul className="space-y-3 text-sm text-slate-400">
-              <li><Link href="#" className="hover:text-emerald-400 transition-colors">{t('footer.privacy_policy')}</Link></li>
-              <li><Link href="#" className="hover:text-emerald-400 transition-colors">{t('footer.terms_of_service')}</Link></li>
-              <li><Link href="#" className="hover:text-emerald-400 transition-colors">{t('footer.cookie_policy')}</Link></li>
-              <li><Link href="#" className="hover:text-emerald-400 transition-colors">{t('footer.contact_us')}</Link></li>
             </ul>
           </div>
         </div>
@@ -60,5 +47,3 @@ export default function Footer() {
     </footer>
   );
 }
-
-

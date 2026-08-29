@@ -3,6 +3,7 @@ import { getDictionary, Locale } from '@/i18n/dictionaries';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import Link from 'next/link';
 import StatCounters from '@/components/StatCounters';
+import HeroGreeting from '@/components/HeroGreeting';
 
 async function getFeaturedCourses() {
   try {
@@ -50,98 +51,56 @@ export default async function Home() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/20 blur-[120px] rounded-full pointer-events-none" />
 
         <div className="relative z-10 max-w-5xl mx-auto text-center px-4 mt-20 animate-fade-in-up">
-            <div className="flex justify-center mb-8">
-              <svg width="400" height="100" viewBox="0 0 400 100" className="drop-shadow-[0_0_35px_rgba(52,211,153,0.4)] hover:scale-105 transition-transform duration-300">
-                <defs>
-                  <linearGradient id="heroGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#34d399" /> {/* emerald-400 */}
-                    <stop offset="100%" stopColor="#3b82f6" /> {/* blue-500 */}
-                  </linearGradient>
-                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="2" result="blur" />
-                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                  </filter>
-                </defs>
-                
-                {/* Dimmed Shadow Under Text */}
-                <text 
-                  x="50%" 
-                  y="54%" 
-                  dominantBaseline="middle" 
-                  textAnchor="middle" 
-                  fill="#000000" 
-                  fillOpacity="0.7"
-                  fontFamily="monospace" 
-                  fontSize="64" 
-                  fontWeight="900"
-                  letterSpacing="4"
-                  style={{ filter: 'blur(4px)' }}
-                >
-                  &lt;/&gt;$&lt;/&gt;
-                </text>
-                
-                {/* Main Glowing SVG Text */}
-                <text 
-                  x="50%" 
-                  y="52%" 
-                  dominantBaseline="middle" 
-                  textAnchor="middle" 
-                  fill="url(#heroGradient)" 
-                  fontFamily="monospace" 
-                  fontSize="64" 
-                  fontWeight="900"
-                  letterSpacing="4"
-                  filter="url(#glow)"
-                >
-                  &lt;/&gt;$&lt;/&gt;
-                </text>
-              </svg>
-            </div>
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 text-white leading-tight">
-              {locale === 'en' ? (
-                <>
-                  {dict.home.title_part1}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-500 whitespace-nowrap">
-                    {dict.home.title_highlight}
-                  </span>
-                  <br />
-                  {dict.home.title_part2}
-                </>
-              ) : (
-                <>
-                  {dict.home.title_part1}
-                  <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-500">
-                    {dict.home.title_highlight}
-                  </span>
-                  <br />
-                  {dict.home.title_part2}
-                </>
-              )}
-            </h1>
-            
-            <p className="text-lg md:text-2xl text-slate-300 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
-              {dict.home.subtitle}
-            </p>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a 
-              href="#featured-courses" 
-              className="group relative px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-lg transition-all transform hover:-translate-y-1 shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)] w-full sm:w-auto overflow-hidden"
-            >
-              <span className="relative z-10 flex items-center gap-2 justify-center">
-                {dict.home.featured_courses_btn}
-                <svg className="w-5 h-5 group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
-              </span>
-            </a>
-            <Link 
-              href="/blogs" 
-              className="group px-8 py-4 bg-slate-900/50 hover:bg-slate-800/80 text-white border border-white/10 rounded-xl font-semibold text-lg transition-all backdrop-blur-md hover:-translate-y-1 w-full sm:w-auto flex items-center justify-center gap-2"
-            >
-              {dict.home.read_blogs_btn}
-              <svg className="w-5 h-5 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" /></svg>
-            </Link>
+          <div className="flex justify-center mb-8">
+            <svg width="400" height="100" viewBox="0 0 400 100" className="drop-shadow-[0_0_35px_rgba(52,211,153,0.4)] hover:scale-105 transition-transform duration-300">
+              <defs>
+                <linearGradient id="heroGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#34d399" /> {/* emerald-400 */}
+                  <stop offset="100%" stopColor="#3b82f6" /> {/* blue-500 */}
+                </linearGradient>
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="2" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              
+              {/* Dimmed Shadow Under Text */}
+              <text 
+                x="50%" 
+                y="54%" 
+                dominantBaseline="middle" 
+                textAnchor="middle" 
+                fill="#000000" 
+                fillOpacity="0.7"
+                fontFamily="monospace" 
+                fontSize="64" 
+                fontWeight="900"
+                letterSpacing="4"
+                style={{ filter: 'blur(4px)' }}
+              >
+                &lt;/&gt;$&lt;/&gt;
+              </text>
+              
+              {/* Main Glowing SVG Text */}
+              <text 
+                x="50%" 
+                y="52%" 
+                dominantBaseline="middle" 
+                textAnchor="middle" 
+                fill="url(#heroGradient)" 
+                fontFamily="monospace" 
+                fontSize="64" 
+                fontWeight="900"
+                letterSpacing="4"
+                filter="url(#glow)"
+              >
+                &lt;/&gt;$&lt;/&gt;
+              </text>
+            </svg>
           </div>
+
+          {/* Dynamic Hero Greeting (Authorized vs Public) */}
+          <HeroGreeting />
         </div>
       </section>
 
@@ -219,4 +178,3 @@ export default async function Home() {
     </div>
   );
 }
-

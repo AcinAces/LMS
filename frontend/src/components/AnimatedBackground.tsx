@@ -2,27 +2,43 @@
 
 import React, { useEffect, useRef } from 'react';
 
+// Universally recognized, memorable, and iconic short syntax snippets
 const SYNTAX_SNIPPETS = [
-  // JS/TS
-  'const', 'let', '=>', '{}', '[]', '<Component />', 'function()', 'return',
-  'import { useState }', 'useEffect(() => {}, [])', 'console.log()', 'await', 
-  'async', 'class', 'interface', 'type', 'try', 'catch', 'export default',
-  'props', 'state', 'map()', 'filter()', 'reduce()', 'Promise.all()', 'setTimeout()',
-  
-  // HTML/CSS
-  '<div>', '</div>', '<h1>', '/>', '</>', 'display: flex;', 'margin: 0;', 
-  'color: #fff;', 'grid-template-columns:', 'box-sizing: border-box;',
+  // Competitive Programming & C++
+  'int main()', 'cin >> n;', 'cout << ans << endl;', 'return 0;',
+  'for (int i = 0; i < n; i++)', 'vector<int> v;', 'v.push_back(x);',
+  'sort(v.begin(), v.end());', 'map<string, int> mp;', 'pair<int, int>',
+  'queue<int> q;', 'stack<int> s;', 'priority_queue<int> pq;',
+  'int mid = (l + r) / 2;', 'binary_search()', 'dp[i][j]',
+  'ans = max(ans, cur);', '1e9 + 7', 'O(n log n)', 'O(1)',
+  'while (t--)', 'bool ok = true;', 'nullptr', '#include <iostream>',
   
   // Python
-  'def __init__(self):', 'import pandas as pd', 'print()', "if __name__ == '__main__':",
-  'lambda x: x', '@decorator', 'yield', 'self.', 'dict()', 'list()',
+  'def solve():', 'print(ans)', 'for i in range(n):', 'arr.sort()',
+  'len(arr)', 'map(int, input().split())', "if __name__ == '__main__':",
+  'lambda x: x * 2', 'yield result', 'list(range(n))', 'dict()', 'set()',
+  'return True', 'import math', 'min(a, b)', 'max(a, b)',
   
-  // Java/C++/C#
-  'public static void main', 'System.out.println', 'std::cout', '#include <iostream>',
-  'virtual void', 'std::vector', 'List<String>', 'public class', 'private final',
+  // JavaScript / TypeScript / React
+  'const [state, setState] = useState();', 'useEffect(() => {}, []);',
+  'console.log("Accepted!");', 'await fetch(url);', 'async () => {}',
+  'export default function()', 'interface User', 'type Node = { val: number }',
+  'Promise.all([p1, p2])', 'JSON.stringify(data)', 'arr.map(x => x * 2)',
+  'arr.filter(Boolean)', 'arr.reduce((a, b) => a + b, 0)', 'setTimeout(fn, 100)',
+  'try { ... } catch (e) {}', '<Component {...props} />', '<></>',
   
-  // SQL/Bash
-  'SELECT * FROM', 'LEFT JOIN', 'WHERE id =', 'GROUP BY', 'npm run dev', 'git commit -m'
+  // SQL & Git & Web
+  'SELECT * FROM users', 'WHERE status = "AC"', 'GROUP BY user_id',
+  'ORDER BY score DESC', 'git commit -m "Accepted"', 'git push origin main',
+  'npm run dev', 'display: flex;', 'justify-content: center;'
+];
+
+const COLOR_PALETTE = [
+  { r: 52, g: 211, b: 153 },  // emerald-400
+  { r: 6, g: 182, b: 212 },   // cyan-500
+  { r: 96, g: 165, b: 250 },  // blue-400
+  { r: 45, g: 212, b: 191 },  // teal-400
+  { r: 167, g: 139, b: 250 }  // purple-400
 ];
 
 class Particle {
@@ -34,51 +50,70 @@ class Particle {
   speedY: number;
   baseSpeedX: number;
   baseSpeedY: number;
+  color: { r: number; g: number; b: number };
+  baseOpacity: number;
   opacity: number;
+  pulseSpeed: number;
+  pulseOffset: number;
+  sineOffset: number;
+  sineSpeed: number;
 
   constructor(canvasWidth: number, canvasHeight: number) {
     this.x = Math.random() * canvasWidth;
     this.y = Math.random() * canvasHeight;
     this.text = SYNTAX_SNIPPETS[Math.floor(Math.random() * SYNTAX_SNIPPETS.length)];
-    // Reduced size by 30% (was 10 to 22, now 7 to 15.4)
-    this.size = (Math.random() * 12 + 10) * 0.7; 
     
-    // Slower movement
-    this.baseSpeedX = (Math.random() - 0.5) * 0.25;
-    this.baseSpeedY = (Math.random() - 0.5) * 0.25 - 0.15; // gentle upward drift
+    // Balanced font size for clean readability without clutter
+    this.size = Math.random() * 5 + 9; // 9px to 14px
+    
+    // Organic gentle drift
+    this.baseSpeedX = (Math.random() - 0.5) * 0.2;
+    this.baseSpeedY = - (Math.random() * 0.25 + 0.1); // gentle floating upward
     this.speedX = this.baseSpeedX;
     this.speedY = this.baseSpeedY;
     
-    this.opacity = Math.random() * 0.25 + 0.05; // 0.05 to 0.3 opacity
+    this.color = COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
+    this.baseOpacity = Math.random() * 0.18 + 0.08; // 0.08 to 0.26
+    this.opacity = this.baseOpacity;
+    
+    // Subtle breathing pulse
+    this.pulseSpeed = Math.random() * 0.02 + 0.01;
+    this.pulseOffset = Math.random() * Math.PI * 2;
+    
+    // Horizontal gentle wave
+    this.sineOffset = Math.random() * Math.PI * 2;
+    this.sineSpeed = Math.random() * 0.015 + 0.005;
   }
 
-  update(mouseX: number, mouseY: number) {
-    // Mouse interaction - smooth repulse
+  update(mouseX: number, mouseY: number, time: number) {
+    // Subtle sine wave motion
+    this.sineOffset += this.sineSpeed;
+    const waveX = Math.sin(this.sineOffset) * 0.15;
+
+    // Pulsing opacity
+    this.pulseOffset += this.pulseSpeed;
+    this.opacity = this.baseOpacity + Math.sin(this.pulseOffset) * 0.04;
+
+    // Smooth mouse interaction - repulse radius
     if (mouseX !== -1 && mouseY !== -1) {
       const dx = this.x - mouseX;
       const dy = this.y - mouseY;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      const repelRadius = 180;
+      const repelRadius = 160;
       
       if (distance < repelRadius) {
-        // Force is stronger the closer the mouse is
         const force = (repelRadius - distance) / repelRadius;
+        const targetSpeedX = (dx / (distance || 1)) * force * 2.2;
+        const targetSpeedY = (dy / (distance || 1)) * force * 2.2;
         
-        // Push away (10% faster, was 1.5 now 1.65)
-        const targetSpeedX = (dx / distance) * force * 1.65;
-        const targetSpeedY = (dy / distance) * force * 1.65;
-        
-        // Smoothly accelerate towards the target pushed speed (10% faster reaction, was 0.05 now 0.055)
-        this.speedX += (targetSpeedX - this.speedX) * 0.055;
-        this.speedY += (targetSpeedY - this.speedY) * 0.055;
+        this.speedX += (targetSpeedX - this.speedX) * 0.08;
+        this.speedY += (targetSpeedY - this.speedY) * 0.08;
       } else {
-        // Smoothly decelerate back to normal speed
-        this.speedX += (this.baseSpeedX - this.speedX) * 0.03;
+        this.speedX += (this.baseSpeedX + waveX - this.speedX) * 0.03;
         this.speedY += (this.baseSpeedY - this.speedY) * 0.03;
       }
     } else {
-      // Smoothly decelerate back to normal speed if mouse is out
-      this.speedX += (this.baseSpeedX - this.speedX) * 0.03;
+      this.speedX += (this.baseSpeedX + waveX - this.speedX) * 0.03;
       this.speedY += (this.baseSpeedY - this.speedY) * 0.03;
     }
 
@@ -86,16 +121,15 @@ class Particle {
     this.y += this.speedY;
 
     // Wrap around screen seamlessly
-    if (this.y < -50) this.y = window.innerHeight + 50;
-    if (this.y > window.innerHeight + 50) this.y = -50;
-    if (this.x < -150) this.x = window.innerWidth + 150;
-    if (this.x > window.innerWidth + 150) this.x = -150;
+    if (this.y < -40) this.y = window.innerHeight + 40;
+    if (this.y > window.innerHeight + 40) this.y = -40;
+    if (this.x < -180) this.x = window.innerWidth + 180;
+    if (this.x > window.innerWidth + 180) this.x = -180;
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    // Using the Teal primary accent color (rgb(0, 175, 182))
-    ctx.fillStyle = `rgba(0, 175, 182, ${this.opacity})`;
-    ctx.font = `${this.size}px monospace`;
+    ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${Math.max(0.02, this.opacity)})`;
+    ctx.font = `500 ${this.size}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace`;
     ctx.fillText(this.text, this.x, this.y);
   }
 }
@@ -112,18 +146,20 @@ export default function AnimatedBackground() {
 
     let animationFrameId: number;
     let particles: Particle[] = [];
-    
     let mouse = { x: -1, y: -1 };
+    let time = 0;
 
     const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      ctx.scale(dpr, dpr);
       
       particles = [];
       // Adjust density based on screen size
-      const numParticles = Math.floor((window.innerWidth * window.innerHeight) / 17000);
-      for (let i = 0; i < numParticles; i++) {
-        particles.push(new Particle(canvas.width, canvas.height));
+      const numParticles = Math.floor((window.innerWidth * window.innerHeight) / 16000);
+      for (let i = 0; i < Math.max(25, Math.min(numParticles, 75)); i++) {
+        particles.push(new Particle(window.innerWidth, window.innerHeight));
       }
     };
 
@@ -144,10 +180,11 @@ export default function AnimatedBackground() {
     handleResize();
 
     const render = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      time += 1;
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
       for (let i = 0; i < particles.length; i++) {
-        particles[i].update(mouse.x, mouse.y);
+        particles[i].update(mouse.x, mouse.y, time);
         particles[i].draw(ctx);
       }
 
@@ -168,7 +205,7 @@ export default function AnimatedBackground() {
     <canvas
       ref={canvasRef}
       className="fixed top-0 left-0 w-full h-full -z-10 bg-slate-950"
-      style={{ pointerEvents: 'none' }}
+      style={{ pointerEvents: 'none', width: '100vw', height: '100vh' }}
     />
   );
 }

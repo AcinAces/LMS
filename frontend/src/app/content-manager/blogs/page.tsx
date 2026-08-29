@@ -29,6 +29,7 @@ export default function ContentManagerBlogsPage() {
     title: '',
     topic: '',
     subtopic: '',
+    imgURL: '',
     body: ''
   });
   const [saving, setSaving] = useState(false);
@@ -81,6 +82,21 @@ export default function ContentManagerBlogsPage() {
   };
 
   const columns: ColumnDef<any>[] = [
+    { 
+      key: 'imgURL', 
+      label: 'Cover', 
+      render: (row) => (
+        row.imgURL ? (
+          <div className="w-12 h-9 rounded-lg overflow-hidden border border-white/10 bg-slate-800 flex-shrink-0">
+            <img src={row.imgURL} alt={row.title} className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <div className="w-12 h-9 rounded-lg bg-slate-800/80 border border-white/5 flex items-center justify-center text-[10px] text-gray-500 font-mono">
+            No img
+          </div>
+        )
+      )
+    },
     { key: 'title', label: 'Title' },
     { key: 'topic', label: 'Topic', render: (row) => row.topic || 'N/A' },
     { key: 'subtopic', label: 'Subtopic', render: (row) => row.subtopic || 'N/A' },
@@ -108,13 +124,21 @@ export default function ContentManagerBlogsPage() {
         title: row.title || '',
         topic: row.topic || '',
         subtopic: row.subtopic || '',
+        imgURL: row.imgURL || '',
         body: b || ''
       });
     } else {
-      setFormData({ title: '', topic: '', subtopic: '', body: '' });
+      setFormData({ title: '', topic: '', subtopic: '', imgURL: '', body: '' });
     }
     setError('');
     setIsModalOpen(true);
+  };
+
+  const handleInsertMarkdownHelper = (template: string) => {
+    setFormData(prev => ({
+      ...prev,
+      body: prev.body ? `${prev.body}\n\n${template}` : template
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,6 +155,7 @@ export default function ContentManagerBlogsPage() {
         title: formData.title,
         topic: formData.topic,
         subtopic: formData.subtopic,
+        imgURL: formData.imgURL.trim() || null,
         body: formData.body,
         ...(user.id ? { author: { connect: [user.documentId || user.id] } } : {}),
         ...(isEditing ? {} : { isPublished: false })
@@ -188,7 +213,7 @@ export default function ContentManagerBlogsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Manage Blogs</h1>
-        <p className="text-gray-400">Write articles. They are saved as Drafts by default. Toggle the switch to publish.</p>
+        <p className="text-gray-400">Write articles with custom cover pictures and markdown formatting. Toggle the switch to publish.</p>
       </div>
 
       <DataTable 
@@ -214,7 +239,7 @@ export default function ContentManagerBlogsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[calc(85vh-8rem)] overflow-y-auto">
               {error && (
                 <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm">
                   {error}
@@ -271,20 +296,92 @@ export default function ContentManagerBlogsPage() {
                 <p className="text-xs text-gray-400">Engaging, clear title for the article (5–150 characters)</p>
               </div>
 
+              {/* Cover Image / Picture Option */}
+              <div className="space-y-2 bg-black/30 p-4 rounded-xl border border-white/5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-semibold text-gray-200">
+                    Cover Picture (Image URL) <span className="text-xs text-gray-400 font-normal">(Optional)</span>
+                  </label>
+                  {formData.imgURL && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, imgURL: '' })}
+                      className="text-xs text-rose-400 hover:text-rose-300 font-medium"
+                    >
+                      Clear Picture
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex gap-3 items-start">
+                  <div className="flex-1 space-y-1">
+                    <input
+                      type="url"
+                      placeholder="https://images.unsplash.com/... or https://i.imgur.com/..."
+                      value={formData.imgURL}
+                      onChange={(e) => setFormData({ ...formData, imgURL: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                    />
+                    <p className="text-xs text-gray-400">Direct image link for the blog card & hero header</p>
+                  </div>
+
+                  {formData.imgURL && (
+                    <div className="w-20 h-14 rounded-lg overflow-hidden border border-emerald-500/40 bg-slate-950 flex-shrink-0 relative">
+                      <img 
+                        src={formData.imgURL} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }} 
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Content Field with Markdown Tooltips */}
               <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-gray-200">Content (Markdown) <span className="text-red-400">*</span></label>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="block text-sm font-semibold text-gray-200">Content (Markdown) <span className="text-red-400">*</span></label>
+                  <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                    <span>Quick Insert:</span>
+                    <button
+                      type="button"
+                      onClick={() => handleInsertMarkdownHelper('![Illustration description](https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800)')}
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-emerald-400 border border-white/10 text-[11px]"
+                    >
+                      + Image
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleInsertMarkdownHelper('```cpp\n#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello World!" << endl;\n    return 0;\n}\n```')}
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-cyan-400 border border-white/10 text-[11px]"
+                    >
+                      + Code
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleInsertMarkdownHelper('## Section Title\n\nExplain key concept here with **bold terms** and `inline_code`.')}
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-purple-400 border border-white/10 text-[11px]"
+                    >
+                      + Heading
+                    </button>
+                  </div>
+                </div>
+
                 <textarea
                   required
                   rows={8}
-                  placeholder="Write the article in Markdown format (headers, code snippets, lists, bold text)..."
+                  placeholder="Write the article in Markdown format (headers, code snippets, lists, bold text, images)..."
                   value={formData.body}
                   onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all min-h-[220px]"
+                  className="w-full px-3.5 py-2.5 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all min-h-[200px]"
                 />
-                <p className="text-xs text-gray-400">Full article content supporting GitHub Flavored Markdown</p>
+                <p className="text-xs text-gray-400">Full article content supporting GitHub Flavored Markdown and inline pictures</p>
               </div>
 
-              <div className="pt-4 flex justify-end gap-3 sticky bottom-0 bg-gray-900 py-2">
+              <div className="pt-4 flex justify-end gap-3 sticky bottom-0 bg-gray-900 py-2 border-t border-white/5">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

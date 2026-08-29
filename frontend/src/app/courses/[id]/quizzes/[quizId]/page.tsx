@@ -68,9 +68,9 @@ export default function QuizTakingPage() {
     
     let penalty = 0;
     let logMessage = '';
-    if (type === 'fullscreen') { penalty = 2; logMessage = 'Exited full-screen'; }
-    if (type === 'blur') { penalty = 5; logMessage = 'Minimized the screen'; }
-    if (type === 'visibility') { penalty = 5; logMessage = 'Changed tab'; }
+    if (type === 'fullscreen') { penalty = 2; logMessage = t('quiz.exit_fullscreen'); }
+    if (type === 'blur') { penalty = 5; logMessage = t('quiz.minimize_screen'); }
+    if (type === 'visibility') { penalty = 5; logMessage = t('quiz.change_tab'); }
 
     setViolationFlags(prev => {
       const newFlags = { ...prev, [type]: true };
@@ -87,7 +87,7 @@ export default function QuizTakingPage() {
         ...(jwt ? { 'Authorization': `Bearer ${jwt}` } : {})
       };
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quiz-attempts/${attemptId}/violation`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quiz-attempts/${attemptId}/violation`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -98,7 +98,7 @@ export default function QuizTakingPage() {
     } catch (err) {
       console.error("Failed to sync violation to server", err);
     }
-  }, [attemptId, violationFlags]);
+  }, [attemptId, violationFlags, t]);
 
   const violationCount = (violationFlags.fullscreen ? 1 : 0) + (violationFlags.blur ? 1 : 0) + (violationFlags.visibility ? 1 : 0);
 
@@ -114,7 +114,6 @@ export default function QuizTakingPage() {
       };
 
       const submitAnswers: Record<string, string> = {};
-      let totalQuestions = quiz?.questions?.length || 0;
 
       if (quiz?.questions) {
         for (const q of quiz.questions) {
@@ -140,49 +139,57 @@ export default function QuizTakingPage() {
         throw new Error(await res.text());
       }
 
-      const responseData = await res.json();
-      const finalAttempt = responseData.data;
-
       localStorage.removeItem(`quizProgress_${quizId}`);
       if (document.fullscreenElement) {
-        await document.exitFullscreen();
+        await document.exitFullscreen().catch(() => {});
       }
 
-      if (finalAttempt.violationsLog?.length >= 3) {
-        toast.error('Exam Cancelled. You received 0 marks due to maximum violations.', 'Exam Terminated');
-      } else {
-        toast.success(`Final Score: ${finalAttempt.score}/${totalQuestions} (Violations Deducted: ${finalAttempt.violationScore})`, 'Quiz Submitted Successfully!');
-      }
-      
-      setTimeout(() => {
-        router.push(`/courses/${courseId}/quizzes`);
-      }, 1000);
-
-    } catch (err) {
-      console.error(err);
-      toast.error('Error submitting quiz. Please check your connection and try again.');
+      router.push(`/courses/${courseId}/quizzes`);
+    } catch (err: any) {
+      console.error("Submit failed", err);
+      toast.error(err.message || "Failed to submit quiz");
       setSubmitting(false);
     }
-  }, [answers, quiz, attemptId, courseId, quizId, router, toast]);
+  }, [attemptId, answers, quiz, quizId, courseId, router, toast]);
 
   useEffect(() => {
-    if (violationCount >= 3 && !submitting && attemptId) {
-      toast.error("Maximum violations reached. Submitting quiz now...", "Exam Disqualified");
-      setTimeout(() => {
-        submitQuiz();
-      }, 800);
+    if (violationCount >= 3) {
+      submitQuiz();
     }
-  }, [violationCount, submitting, submitQuiz, attemptId, toast]);
+  }, [violationCount, submitQuiz]);
 
   useEffect(() => {
-    if (!started || submitting || !attemptId) return;
+    if (!started) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          submitQuiz();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [started, submitQuiz]);
+
+  useEffect(() => {
+    if (!started) return;
 
     const handleFullscreenChange = () => {
-      if (!document.fullscreenElement) reportViolation('fullscreen');
+      if (!document.fullscreenElement) {
+        reportViolation('fullscreen');
+      }
     };
+
     const handleVisibilityChange = () => {
-      if (document.hidden) reportViolation('visibility');
+      if (document.hidden) {
+        reportViolation('visibility');
+      }
     };
+
     const handleBlur = () => {
       reportViolation('blur');
     };
@@ -196,27 +203,7 @@ export default function QuizTakingPage() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [started, submitting, attemptId, reportViolation]);
-
-  useEffect(() => {
-    if (!started || submitting) return;
-    if (timeLeft <= 0) {
-      submitQuiz();
-      return;
-    }
-    const timerId = setInterval(() => {
-      setTimeLeft(prev => prev - 1);
-    }, 1000);
-    return () => clearInterval(timerId);
-  }, [started, timeLeft, submitting, submitQuiz]);
-
-  useEffect(() => {
-    if (!started || submitting) return;
-    const saveId = setInterval(() => {
-      localStorage.setItem(`quizProgress_${quizId}`, JSON.stringify(answers));
-    }, 10000);
-    return () => clearInterval(saveId);
-  }, [started, answers, quizId, submitting]);
+  }, [started, reportViolation]);
 
   const handleStart = async () => {
     try {
@@ -230,22 +217,29 @@ export default function QuizTakingPage() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/quiz-attempts/start`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ data: { quizId: quiz.documentId } })
+        body: JSON.stringify({
+          data: { quizId }
+        })
       });
 
       if (!res.ok) {
-        throw new Error("Failed to start attempt on server");
+        throw new Error(await res.text());
       }
-      
-      const data = await res.json();
-      setAttemptId(data.data.documentId);
-      
-      if (containerRef.current) {
-        await containerRef.current.requestFullscreen();
+
+      const responseData = await res.json();
+      const attempt = responseData.data;
+
+      setAttemptId(attempt.documentId || attempt.id);
+
+      if (containerRef.current && !document.fullscreenElement) {
+        await containerRef.current.requestFullscreen().catch((err) => {
+          console.warn("Fullscreen request ignored or failed:", err);
+        });
       }
+
       setStarted(true);
       setSubmitting(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       setSubmitting(false);
       toast.error("Failed to start quiz. Please try again and ensure your browser allows fullscreen mode.");
@@ -272,7 +266,7 @@ export default function QuizTakingPage() {
 
   if (!quiz) return (
     <div className="min-h-screen flex items-center justify-center pt-16 bg-gray-900 text-white">
-      <h2>Quiz not found.</h2>
+      <h2>{t('quiz.no_quizzes')}</h2>
     </div>
   );
 
@@ -288,20 +282,20 @@ export default function QuizTakingPage() {
             <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 p-4 rounded-lg mb-8 text-left">
               <p className="font-bold mb-2 flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                Proctoring Warning
+                {t('quiz.proctoring_warning')}
               </p>
               <ul className="text-sm space-y-1 list-disc list-inside">
-                <li>Your browser will enter full-screen mode.</li>
-                <li>Do not exit full-screen, minimize, or switch tabs.</li>
-                <li>3 violations will end the exam automatically!</li>
+                <li>{t('quiz.p_rule1')}</li>
+                <li>{t('quiz.p_rule2')}</li>
+                <li>{t('quiz.p_rule3')}</li>
               </ul>
             </div>
             <button
               onClick={handleStart}
               disabled={submitting}
-              className="px-10 py-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xl font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+              className="px-10 py-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xl font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
             >
-              {submitting ? 'Starting Session...' : t('quiz.start_quiz')}
+              {submitting ? t('quiz.starting_session') : t('quiz.start_quiz')}
             </button>
           </div>
         </div>
@@ -343,21 +337,21 @@ export default function QuizTakingPage() {
             <div className="mt-12 mb-8">
               <button
                 onClick={() => {
-                  if(confirm("Are you sure you want to submit your quiz early?")) {
+                  if(confirm(t('quiz.confirm_submit_early'))) {
                     submitQuiz();
                   }
                 }}
                 disabled={submitting}
-                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xl font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xl font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
               >
-                {submitting ? 'Submitting to Server...' : t('quiz.submit_quiz')}
+                {submitting ? t('quiz.submitting_server') : t('quiz.submit_quiz')}
               </button>
             </div>
           </div>
 
           <div className="w-full md:w-80 flex-shrink-0 flex flex-col gap-6">
             <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 text-center sticky top-6">
-              <div className="text-sm text-gray-400 mb-2 uppercase tracking-wider font-bold">Time Remaining</div>
+              <div className="text-sm text-gray-400 mb-2 uppercase tracking-wider font-bold">{t('quiz.time_remaining')}</div>
               <div className={`text-5xl font-mono font-bold ${timeLeft < 60 ? 'text-red-500 animate-pulse' : 'text-emerald-400'}`}>
                 {formatTime(timeLeft)}
               </div>
@@ -366,11 +360,11 @@ export default function QuizTakingPage() {
             <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-6 sticky top-48">
               <h3 className="text-xl font-bold text-red-400 mb-4 flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                Proctor Status
+                {t('quiz.proctor_status')}
               </h3>
               
               <div className="mb-6 bg-red-950/50 p-4 rounded-lg text-center border border-red-900">
-                <div className="text-sm text-red-300 uppercase tracking-widest mb-1">Violations</div>
+                <div className="text-sm text-red-300 uppercase tracking-widest mb-1">{t('quiz.violations')}</div>
                 <div className="text-4xl font-extrabold text-red-500">{violationCount} / 3</div>
                 
                 <div className="mt-4 w-full bg-red-950 rounded-full h-2.5 border border-red-900 overflow-hidden">
@@ -380,29 +374,29 @@ export default function QuizTakingPage() {
                   ></div>
                 </div>
                 <div className="text-xs text-red-400 mt-2">
-                  {violationCount >= 3 ? 'EXAM CANCELLED' : `${3 - violationCount} strikes remaining`}
+                  {violationCount >= 3 ? t('quiz.exam_cancelled') : `${3 - violationCount} ${t('quiz.strikes_remaining')}`}
                 </div>
               </div>
 
-              <div className="text-sm font-semibold text-gray-400 mb-2">Rules Enforced (Max 1 each):</div>
+              <div className="text-sm font-semibold text-gray-400 mb-2">{t('quiz.rules_enforced')}</div>
               <ul className="text-xs space-y-2 text-gray-400 mb-4">
                 <li className={`flex items-center justify-between ${violationFlags.fullscreen ? 'text-red-500 line-through' : ''}`}>
-                  <span>Exit full-screen</span>
+                  <span>{t('quiz.exit_fullscreen')}</span>
                   <span>-2</span>
                 </li>
                 <li className={`flex items-center justify-between ${violationFlags.blur ? 'text-red-500 line-through' : ''}`}>
-                  <span>Minimize Screen</span>
+                  <span>{t('quiz.minimize_screen')}</span>
                   <span>-5</span>
                 </li>
                 <li className={`flex items-center justify-between ${violationFlags.visibility ? 'text-red-500 line-through' : ''}`}>
-                  <span>Change tab</span>
+                  <span>{t('quiz.change_tab')}</span>
                   <span>-5</span>
                 </li>
               </ul>
 
               {violationsLog.length > 0 && (
                 <div className="mt-4 border-t border-red-900/50 pt-4">
-                  <div className="text-sm font-semibold text-red-400 mb-2">Server Logs:</div>
+                  <div className="text-sm font-semibold text-red-400 mb-2">{t('quiz.server_logs')}</div>
                   <div className="h-24 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                     {violationsLog.map((log, i) => (
                       <div key={i} className="text-xs text-red-300 bg-red-500/10 p-2 rounded flex items-center justify-between">

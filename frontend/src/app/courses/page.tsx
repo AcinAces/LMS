@@ -206,7 +206,7 @@ export default function CoursesPage() {
             
             {theoryCourses.length > 0 && (
               <div>
-                <h2 className="text-2xl font-bold text-white mb-6 border-b border-white/10 pb-2">Theory Courses</h2>
+                <h2 className="text-2xl font-bold text-white mb-6 border-b border-white/10 pb-2">{t('courses.theory_courses')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {theoryCourses.map(renderCourseCard)}
                 </div>
@@ -215,7 +215,7 @@ export default function CoursesPage() {
             
             {contestCourses.length > 0 && (
               <div>
-                <h2 className="text-2xl font-bold text-white mb-6 border-b border-white/10 pb-2">Contests</h2>
+                <h2 className="text-2xl font-bold text-white mb-6 border-b border-white/10 pb-2">{t('courses.contests')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {contestCourses.map(renderCourseCard)}
                 </div>
