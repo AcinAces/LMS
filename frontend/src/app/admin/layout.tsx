@@ -18,32 +18,73 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         router.push('/login');
         return;
       }
+
+      // Check cached user for immediate rendering
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const cachedUser = JSON.parse(userStr);
+          if (cachedUser?.username) setUsername(cachedUser.username);
+          if (cachedUser?.avatar) setAvatar(cachedUser.avatar);
+          if (cachedUser?.role?.type === 'admin') {
+            setLoading(false);
+          }
+        } catch (_) {}
+      }
+
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/me?populate=role,avatar`, {
-          headers: { 'Authorization': `Bearer ${jwt}` }
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/me?populate=role`, {
+          headers: { 'Authorization': `Bearer ${jwt}` },
+          cache: 'no-store'
         });
-        if (!res.ok) throw new Error('Unauthorized');
-        
-        const meData = await res.json();
-        const userStr = localStorage.getItem('user');
-        if (userStr && meData?.role) {
-           const user = JSON.parse(userStr);
-           setUsername(meData.username || user.username || 'Admin');
-           setAvatar(meData.avatar?.url || user.avatar || null);
-           localStorage.setItem('user', JSON.stringify({ ...user, ...meData, role: meData.role }));
-        } else if (meData) {
-           setUsername(meData.username || 'Admin');
-           setAvatar(meData.avatar?.url || null);
+
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem('jwt');
+          localStorage.removeItem('user');
+          router.push('/login');
+          return;
+        }
+
+        if (!res.ok) {
+          // If server error or temporary issue, check if cached user is valid admin
+          if (userStr) {
+            const cachedUser = JSON.parse(userStr);
+            if (cachedUser?.role?.type === 'admin') {
+              setLoading(false);
+              return;
+            }
+          }
+          router.push('/');
+          return;
         }
         
+        const meData = await res.json();
         if (meData?.role?.type !== 'admin') {
           router.push('/');
           return;
         }
+
+        setUsername(meData.username || 'Admin');
+        setAvatar(meData.avatar || null);
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          localStorage.setItem('user', JSON.stringify({ ...user, ...meData, role: meData.role }));
+        } else {
+          localStorage.setItem('user', JSON.stringify(meData));
+        }
+
         setLoading(false);
       } catch (e) {
-        localStorage.removeItem('jwt');
-        localStorage.removeItem('user');
+        console.error('Admin layout auth verification error:', e);
+        if (userStr) {
+          try {
+            const cachedUser = JSON.parse(userStr);
+            if (cachedUser?.role?.type === 'admin') {
+              setLoading(false);
+              return;
+            }
+          } catch (_) {}
+        }
         router.push('/login');
       }
     };

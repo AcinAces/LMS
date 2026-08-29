@@ -18,42 +18,75 @@ export default function ContentManagerLayout({
   useEffect(() => {
     const verifySecurely = async () => {
       const jwt = localStorage.getItem('jwt');
-      
       if (!jwt) {
         router.push('/login');
         return;
       }
+
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const cachedUser = JSON.parse(userStr);
+          if (cachedUser?.username) setUsername(cachedUser.username);
+          if (cachedUser?.avatar) setAvatar(cachedUser.avatar);
+          if (cachedUser?.role?.type === 'content_manager' || cachedUser?.role?.type === 'admin') {
+            setLoading(false);
+          }
+        } catch (_) {}
+      }
       
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/me?populate=role`, {
-          headers: { 'Authorization': `Bearer ${jwt}` }
+          headers: { 'Authorization': `Bearer ${jwt}` },
+          cache: 'no-store'
         });
         
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem('jwt');
+          localStorage.removeItem('user');
+          router.push('/login');
+          return;
+        }
+
         if (!res.ok) {
-          throw new Error('Unauthorized');
-        }
-        
-        const meData = await res.json();
-        const userStr = localStorage.getItem('user');
-        if (userStr && meData?.role) {
-           const user = JSON.parse(userStr);
-           setUsername(meData.username || user.username || 'Manager');
-           setAvatar(meData.avatar || user.avatar || null);
-           localStorage.setItem('user', JSON.stringify({ ...user, ...meData, role: meData.role }));
-        } else if (meData) {
-           setUsername(meData.username || 'Manager');
-           setAvatar(meData.avatar || null);
-        }
-        
-        if (meData?.role?.type !== 'content_manager' && meData?.role?.type !== 'admin') {
+          if (userStr) {
+            const cachedUser = JSON.parse(userStr);
+            if (cachedUser?.role?.type === 'content_manager' || cachedUser?.role?.type === 'admin') {
+              setLoading(false);
+              return;
+            }
+          }
           router.push('/');
           return;
         }
         
+        const meData = await res.json();
+        if (meData?.role?.type !== 'content_manager' && meData?.role?.type !== 'admin') {
+          router.push('/');
+          return;
+        }
+
+        setUsername(meData.username || 'Manager');
+        setAvatar(meData.avatar || null);
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          localStorage.setItem('user', JSON.stringify({ ...user, ...meData, role: meData.role }));
+        } else {
+          localStorage.setItem('user', JSON.stringify(meData));
+        }
+        
         setLoading(false);
       } catch (e) {
-        localStorage.removeItem('jwt');
-        localStorage.removeItem('user');
+        console.error('Content manager auth verification error:', e);
+        if (userStr) {
+          try {
+            const cachedUser = JSON.parse(userStr);
+            if (cachedUser?.role?.type === 'content_manager' || cachedUser?.role?.type === 'admin') {
+              setLoading(false);
+              return;
+            }
+          } catch (_) {}
+        }
         router.push('/login');
       }
     };
