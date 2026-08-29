@@ -1,7 +1,67 @@
 import type { Core } from '@strapi/strapi';
 
+export function validatePasswordRequirements(password: string): { isValid: boolean; error?: string } {
+  if (!password || typeof password !== 'string') {
+    return { isValid: false, error: 'Password is required' };
+  }
+  if (password.length < 12) {
+    return { isValid: false, error: 'Password must be at least 12 characters long.' };
+  }
+  if (!/[a-z]/.test(password)) {
+    return { isValid: false, error: 'Password must contain at least 1 lowercase letter (a-z).' };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { isValid: false, error: 'Password must contain at least 1 uppercase letter (A-Z).' };
+  }
+  if (!/[^a-zA-Z0-9]/.test(password)) {
+    return { isValid: false, error: 'Password must contain at least 1 sign or special character (!@#$%^&* etc.).' };
+  }
+  return { isValid: true };
+}
+
 export default {
-  register({ strapi }: { strapi: Core.Strapi }) {},
+  register({ strapi }: { strapi: Core.Strapi }) {
+    const authPlugin = strapi.plugin('users-permissions');
+    if (authPlugin) {
+      const authController = authPlugin.controller('auth');
+      if (authController) {
+        const originalRegister = authController.register.bind(authController);
+        authController.register = async (ctx: any, ...args: any[]) => {
+          const { password } = ctx.request.body || {};
+          const validation = validatePasswordRequirements(password);
+          if (!validation.isValid) {
+            return ctx.badRequest(validation.error);
+          }
+          return (originalRegister as any)(ctx, ...args);
+        };
+      }
+
+      const userController = authPlugin.controller('user');
+      if (userController) {
+        const originalCreate = userController.create.bind(userController);
+        userController.create = async (ctx: any, ...args: any[]) => {
+          const { password } = ctx.request.body || {};
+          const validation = validatePasswordRequirements(password);
+          if (!validation.isValid) {
+            return ctx.badRequest(validation.error);
+          }
+          return (originalCreate as any)(ctx, ...args);
+        };
+
+        const originalUpdate = userController.update.bind(userController);
+        userController.update = async (ctx: any, ...args: any[]) => {
+          const { password } = ctx.request.body || {};
+          if (password) {
+            const validation = validatePasswordRequirements(password);
+            if (!validation.isValid) {
+              return ctx.badRequest(validation.error);
+            }
+          }
+          return (originalUpdate as any)(ctx, ...args);
+        };
+      }
+    }
+  },
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     try {
@@ -41,11 +101,35 @@ export default {
         strapi.log.info('Created Content Manager role');
       }
 
-      // 4. Grant Lesson Chat, Progress, and Core API permissions to roles
+      // 4. Grant Lesson Chat, Progress, Quizzes, and Core API permissions to roles
       const allRoles = await roleService.find();
       for (const role of allRoles) {
+        const roleId = role.id;
+        
+        // Actions for all roles (including public & authenticated)
+        const publicAndAuthActions = [
+          'api::quiz.quiz.find',
+          'api::quiz.quiz.findOne',
+          'api::quiz-question.quiz-question.find',
+          'api::quiz-question.quiz-question.findOne',
+          'api::mcq-option.mcq-option.find',
+          'api::mcq-option.mcq-option.findOne',
+          'api::review.review.find',
+          'api::review.review.findOne'
+        ];
+
+        for (const action of publicAndAuthActions) {
+          const existing = await strapi.db.query('plugin::users-permissions.permission').findOne({
+            where: { action, role: roleId }
+          });
+          if (!existing) {
+            await strapi.db.query('plugin::users-permissions.permission').create({
+              data: { action, role: roleId }
+            });
+          }
+        }
+
         if (['authenticated', 'instructor', 'content_manager', 'admin'].includes(role.type)) {
-          const roleId = role.id;
           const actionsToGrant = [
             'api::lesson-message.chat.getChat',
             'api::lesson-message.chat.sendMessage',
@@ -66,8 +150,6 @@ export default {
             'api::enrollment.enrollment.find',
             'api::enrollment.enrollment.findOne',
             'api::enrollment.enrollment.create',
-            'api::review.review.find',
-            'api::review.review.findOne',
             'api::review.review.create'
           ];
           

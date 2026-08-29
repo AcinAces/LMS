@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import DataTable, { ColumnDef } from '@/components/admin/DataTable';
 import DynamicFormModal, { FormField } from '@/components/admin/DynamicFormModal';
 import { useToast } from '@/context/ToastContext';
+import { checkPasswordRequirements } from '@/utils/password';
 
 export default function AdminUsersPage() {
   const toast = useToast();
@@ -82,14 +83,22 @@ export default function AdminUsersPage() {
       placeholder: 'name@example.com',
       hint: 'Valid email address format (e.g. user@domain.com)'
     },
-    ...(editingData?.id ? [] : [{ 
+    ...(editingData?.id ? [{
+      key: 'password', 
+      label: 'New Password (Optional)', 
+      type: 'password' as const, 
+      required: false,
+      placeholder: 'Leave blank to keep existing password',
+      minLength: 12,
+      hint: 'If changing, must be min. 12 chars with uppercase, lowercase, and a sign/symbol'
+    }] : [{ 
       key: 'password', 
       label: 'Password', 
       type: 'password' as const, 
       required: true,
-      placeholder: '••••••••',
-      minLength: 6,
-      hint: 'Minimum 6 characters for security'
+      placeholder: '••••••••••••',
+      minLength: 12,
+      hint: 'Min. 12 characters, 1 uppercase, 1 lowercase, 1 sign/symbol (!@#$...)'
     }]),
     { 
       key: 'role', 
@@ -113,8 +122,33 @@ export default function AdminUsersPage() {
     const jwt = localStorage.getItem('jwt');
     const isEditing = !!editingData?.id;
     
+    // Password validation for create and update
+    if (!isEditing) {
+      const reqs = checkPasswordRequirements(formData.password);
+      if (!reqs.isValid) {
+        let msg = 'Password requirements are not fulfilled.';
+        if (!reqs.minLength) msg = 'Password must be at least 12 characters long.';
+        else if (!reqs.hasUppercase) msg = 'Password must contain at least 1 uppercase letter (A-Z).';
+        else if (!reqs.hasLowercase) msg = 'Password must contain at least 1 lowercase letter (a-z).';
+        else if (!reqs.hasSpecialChar) msg = 'Password must contain at least 1 sign or special character (!@#$%^&* etc.).';
+        toast.error(msg);
+        throw new Error(msg);
+      }
+    } else if (isEditing && formData.password && formData.password.trim()) {
+      const reqs = checkPasswordRequirements(formData.password.trim());
+      if (!reqs.isValid) {
+        let msg = 'Password requirements are not fulfilled.';
+        if (!reqs.minLength) msg = 'New password must be at least 12 characters long.';
+        else if (!reqs.hasUppercase) msg = 'New password must contain at least 1 uppercase letter (A-Z).';
+        else if (!reqs.hasLowercase) msg = 'New password must contain at least 1 lowercase letter (a-z).';
+        else if (!reqs.hasSpecialChar) msg = 'New password must contain at least 1 sign or special character (!@#$%^&* etc.).';
+        toast.error(msg);
+        throw new Error(msg);
+      }
+    }
+
     // For users API in Strapi, it's typically /api/users/:id and expects flat payload, not wrapped in `data`
-    const payload = {
+    const payload: any = {
       username: formData.username,
       email: formData.email,
       role: formData.role ? Number(formData.role) : undefined,
@@ -123,8 +157,10 @@ export default function AdminUsersPage() {
 
     if (!isEditing) {
       // Create user needs a password
-      (payload as any).password = formData.password;
-      (payload as any).confirmed = true;
+      payload.password = formData.password;
+      payload.confirmed = true;
+    } else if (isEditing && formData.password && formData.password.trim()) {
+      payload.password = formData.password.trim();
     }
 
     const url = isEditing 

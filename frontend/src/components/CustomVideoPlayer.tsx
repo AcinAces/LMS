@@ -322,7 +322,7 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
       ref={containerRef} 
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl group border border-white/10 ${!showControls && isPlaying ? 'cursor-none' : ''}`}
+      className={`relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden shadow-2xl group border border-white/10 ${!showControls && isPlaying ? 'cursor-none' : ''}`}
     >
       
       {/* Video Container */}
@@ -342,8 +342,8 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
       <div className="absolute inset-0 z-10 cursor-pointer" onClick={togglePlay}>
         {/* Big Center Play Button when paused */}
         {!isPlaying && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[2px] transition-all">
-            <div className="w-20 h-20 rounded-full bg-emerald-500/90 text-white flex items-center justify-center shadow-2xl shadow-emerald-500/50 hover:scale-110 transition-transform">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px] transition-all">
+            <div className="w-20 h-20 rounded-3xl bg-emerald-500/90 text-white flex items-center justify-center shadow-2xl shadow-emerald-500/50 hover:scale-110 transition-transform">
               <svg className="w-10 h-10 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
@@ -354,54 +354,54 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
 
       {/* Custom Controls Overlay */}
       <div 
-        className={`absolute bottom-0 left-0 right-0 z-20 p-4 bg-gradient-to-t from-black/90 via-black/60 to-transparent transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`absolute bottom-0 left-0 right-0 z-20 p-4 sm:p-5 bg-gradient-to-t from-slate-950/95 via-slate-950/70 to-transparent transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       >
         
         {/* Timeline */}
-        <div className="flex items-center gap-4 mb-2">
+        <div className="flex items-center gap-4 mb-3">
           <input
             type="range"
             min={0}
             max={duration || 100}
             value={currentTime}
             onChange={handleSeek}
-            className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer ${completed ? 'bg-emerald-500/50' : 'bg-blue-500/50'}`}
+            className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer transition-all ${completed ? 'bg-emerald-500/40' : 'bg-cyan-500/40'}`}
             style={{
-              background: `linear-gradient(to right, ${completed ? '#10b981' : '#3b82f6'} ${(currentTime / (duration || 1)) * 100}%, rgba(255,255,255,0.2) ${(currentTime / (duration || 1)) * 100}%)`
+              background: `linear-gradient(to right, ${completed ? '#10b981' : '#06b6d4'} ${(currentTime / (duration || 1)) * 100}%, rgba(255,255,255,0.2) ${(currentTime / (duration || 1)) * 100}%)`
             }}
           />
         </div>
 
         {/* Buttons & Info */}
         <div className="flex items-center justify-between text-white">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <button 
               onClick={togglePlay}
-              className="hover:text-emerald-400 transition-colors focus:outline-none"
+              className="p-1.5 rounded-xl hover:bg-white/10 hover:text-emerald-400 transition-colors focus:outline-none cursor-pointer"
             >
               {isPlaying ? (
-                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>
+                <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>
               ) : (
-                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
               )}
             </button>
-            <div className="text-sm font-mono tracking-wider">
+            <div className="text-xs sm:text-sm font-mono text-slate-300 tracking-wider">
               {formatTime(currentTime)} / {formatTime(duration)}
             </div>
             
             {/* Volume Control */}
             <div 
-              className="flex items-center gap-2 group/volume relative ml-2"
+              className="flex items-center gap-2 group/volume relative ml-1"
               onMouseEnter={() => setShowVolumeSlider(true)}
               onMouseLeave={() => setShowVolumeSlider(false)}
             >
-              <button onClick={toggleMute} className="hover:text-emerald-400 transition-colors focus:outline-none">
+              <button onClick={toggleMute} className="p-1.5 rounded-xl hover:bg-white/10 hover:text-emerald-400 transition-colors focus:outline-none cursor-pointer">
                 {isMuted || volume === 0 ? (
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
                 ) : volume < 50 ? (
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M5 9v6h4l5 5V4L9 9H5zm7-.17v6.34L9.83 13H7v-2h2.83L12 8.83z"/></svg>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M5 9v6h4l5 5V4L9 9H5zm7-.17v6.34L9.83 13H7v-2h2.83L12 8.83z"/></svg>
                 ) : (
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                 )}
               </button>
               
@@ -413,20 +413,20 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
                   max="100"
                   value={isMuted ? 0 : volume}
                   onChange={handleVolumeChange}
-                  className="w-16 h-1 appearance-none bg-white/30 rounded cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full"
+                  className="w-16 h-1 appearance-none bg-white/30 rounded cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-emerald-400 [&::-webkit-slider-thumb]:rounded-full"
                 />
               </div>
             </div>
 
           </div>
           
-          <div className="flex items-center gap-4 text-xs font-semibold">
+          <div className="flex items-center gap-2 sm:gap-3 text-xs font-semibold">
             {/* Quality Control */}
             {qualities.length > 1 && (
               <select
                 value={currentQuality}
                 onChange={handleQualityChange}
-                className="bg-black/50 border border-white/20 text-white rounded px-2 py-1 outline-none focus:border-emerald-500 cursor-pointer appearance-none hover:bg-black/80 transition-colors"
+                className="bg-slate-900/80 border border-white/20 text-white rounded-xl px-2.5 py-1 outline-none focus:border-emerald-500 cursor-pointer appearance-none hover:bg-slate-800 transition-colors text-[11px]"
               >
                 {!qualities.includes('auto') && <option value="auto">Auto</option>}
                 {qualities.map(q => (
@@ -439,7 +439,7 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
             <select
               value={playbackRate}
               onChange={handleSpeedChange}
-              className="bg-black/50 border border-white/20 text-white rounded px-2 py-1 outline-none focus:border-emerald-500 cursor-pointer appearance-none hover:bg-black/80 transition-colors"
+              className="bg-slate-900/80 border border-white/20 text-white rounded-xl px-2.5 py-1 outline-none focus:border-emerald-500 cursor-pointer appearance-none hover:bg-slate-800 transition-colors text-[11px]"
             >
               <option value="0.25">0.25x</option>
               <option value="0.5">0.5x</option>
@@ -455,12 +455,12 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
 
             {!isStaff && (
               completed ? (
-                <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded flex items-center gap-1">
+                <span className="hidden sm:flex px-2.5 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-[10px] font-bold items-center gap-1">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
                   COMPLETED
                 </span>
               ) : (
-                <span className="px-2 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded">
+                <span className="hidden sm:flex px-2.5 py-1 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-xl text-[10px] font-bold font-mono">
                   IN PROGRESS
                 </span>
               )
@@ -469,14 +469,14 @@ const CustomVideoPlayer = forwardRef<any, CustomVideoPlayerProps>(({
             {/* Fullscreen Button */}
             <button 
               onClick={toggleFullscreen}
-              className="hover:text-emerald-400 transition-colors focus:outline-none ml-2"
+              className="p-1.5 rounded-xl hover:bg-white/10 hover:text-emerald-400 transition-colors focus:outline-none cursor-pointer"
             >
               {isFullscreen ? (
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
                 </svg>
               ) : (
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
                 </svg>
               )}

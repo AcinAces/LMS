@@ -16,5 +16,21 @@ export default {
         auth: false,
       },
     },
+    {
+      method: 'POST',
+      path: '/update-profile',
+      handler: 'utility.updateProfile',
+      config: {
+        auth: false,
+      },
+    },
+    {
+      method: 'GET',
+      path: '/leaderboard',
+      handler: 'utility.getLeaderboard',
+      config: {
+        auth: false,
+      },
+    },
   ],
 };

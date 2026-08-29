@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -11,6 +11,9 @@ export default function InstructorLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
+  const [username, setUsername] = useState('Instructor');
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const verifySecurely = async () => {
@@ -31,11 +34,15 @@ export default function InstructorLayout({
         }
         
         const meData = await res.json();
-        
         const userStr = localStorage.getItem('user');
         if (userStr && meData?.role) {
            const user = JSON.parse(userStr);
-           localStorage.setItem('user', JSON.stringify({ ...user, role: meData.role }));
+           setUsername(meData.username || user.username || 'Instructor');
+           setAvatar(meData.avatar || user.avatar || null);
+           localStorage.setItem('user', JSON.stringify({ ...user, ...meData, role: meData.role }));
+        } else if (meData) {
+           setUsername(meData.username || 'Instructor');
+           setAvatar(meData.avatar || null);
         }
         
         if (meData?.role?.type !== 'instructor' && meData?.role?.type !== 'admin') {
@@ -54,55 +61,101 @@ export default function InstructorLayout({
     verifySecurely();
   }, [router]);
 
-  if (loading) return <div className="min-h-screen bg-slate-950 text-slate-100 text-white flex items-center justify-center">Loading...</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+    </div>
+  );
 
   const navItems = [
     { name: 'Dashboard', href: '/instructor', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
     { name: 'My Courses', href: '/instructor/courses', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
-    { name: 'Lessons', href: '/instructor/lessons', icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-    { name: 'Quizzes', href: '/instructor/quizzes', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
+    { name: 'Lessons', href: '/instructor/lessons', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' },
+    { name: 'Quizzes', href: '/instructor/quizzes', icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
     { name: 'Student Progress', href: '/instructor/progress', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-950 flex flex-col md:flex-row text-slate-100">
+      
+      {/* Mobile Toggle Bar */}
+      <div className="md:hidden bg-slate-900 border-b border-white/10 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-white">Instructor Studio</span>
+          <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-bold border border-purple-500/20">Instructor</span>
+        </div>
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+
       {/* Sidebar */}
-      <aside className="w-72 border-r border-white/10 bg-black/50 hidden md:block">
-        <div className="h-full flex flex-col">
-          <div className="p-10 animate-fade-in-up border-b border-white/10">
-            <h2 className="text-2xl font-extrabold text-white tracking-tight">Instructor<span className="text-emerald-500">Panel</span></h2>
+      <aside className={`${mobileOpen ? 'block' : 'hidden'} md:block w-full md:w-72 bg-slate-900/60 backdrop-blur-2xl border-r border-white/10 flex flex-col shrink-0 z-20`}>
+        <div className="p-6 border-b border-white/10 space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">👨‍🏫</span>
+            <h2 className="text-xl font-extrabold text-white tracking-tight">Instructor Hub</h2>
           </div>
-          <nav className="flex-1 p-4 space-y-1">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                    isActive 
-                      ? 'bg-emerald-500/10 text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-500 tracking-tight font-medium' 
-                      : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
-                  }`}
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                  </svg>
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
+          <p className="text-xs text-slate-400">Manage courses, lessons & students</p>
+        </div>
+
+        <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link 
+                key={item.href} 
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 text-xs sm:text-sm font-semibold ${
+                  isActive 
+                    ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30 shadow-md shadow-purple-500/10' 
+                    : 'hover:bg-white/5 text-slate-400 hover:text-slate-200 border border-transparent'
+                }`}
+              >
+                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
+                </svg>
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Sidebar Footer User Info */}
+        <div className="p-4 border-t border-white/10 bg-slate-950/40 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2.5">
+            {avatar ? (
+              <img 
+                src={avatar} 
+                alt={username} 
+                className="w-8 h-8 rounded-xl object-cover border border-purple-500/40 shadow-sm" 
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center font-bold">
+                {username.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="truncate max-w-[120px]">
+              <p className="font-bold text-white truncate">{username}</p>
+              <p className="text-[10px] text-purple-400">Course Author</p>
+            </div>
+          </div>
+          <Link href="/" className="text-slate-400 hover:text-white text-[11px] flex items-center gap-1 font-mono">
+            <span>Site ↗</span>
+          </Link>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 min-w-0 overflow-auto">
-        <div className="p-10 animate-fade-in-up">
-          {children}
-        </div>
+      {/* Main Content Area */}
+      <main className="flex-1 min-w-0 overflow-y-auto p-4 sm:p-8 lg:p-10 animate-fade-in-up">
+        {children}
       </main>
     </div>
   );
 }
-

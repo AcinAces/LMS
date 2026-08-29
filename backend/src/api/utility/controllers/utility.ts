@@ -1,3 +1,22 @@
+function validatePasswordRequirements(password: string): { isValid: boolean; error?: string } {
+  if (!password || typeof password !== 'string') {
+    return { isValid: false, error: 'Password is required' };
+  }
+  if (password.length < 12) {
+    return { isValid: false, error: 'Password must be at least 12 characters long.' };
+  }
+  if (!/[a-z]/.test(password)) {
+    return { isValid: false, error: 'Password must contain at least 1 lowercase letter (a-z).' };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { isValid: false, error: 'Password must contain at least 1 uppercase letter (A-Z).' };
+  }
+  if (!/[^a-zA-Z0-9]/.test(password)) {
+    return { isValid: false, error: 'Password must contain at least 1 sign or special character (!@#$%^&* etc.).' };
+  }
+  return { isValid: true };
+}
+
 async function getAuthenticatedUser(ctx: any, strapi: any) {
   let user = ctx.state.user;
   if (!user) {
@@ -61,6 +80,115 @@ export default {
       return ctx.send({ studentCount, courseCount });
     } catch (err) {
       return ctx.internalServerError('Something went wrong');
+    }
+  },
+
+  async updateProfile(ctx: any) {
+    const strapiInstance = (global as any).strapi;
+    const user = await getAuthenticatedUser(ctx, strapiInstance);
+    if (!user) {
+      return ctx.unauthorized('Authentication required to update profile.');
+    }
+
+    const { email, currentPassword, newPassword, avatar } = ctx.request.body;
+
+    // Ensure database column exists for avatar
+    try {
+      const knex = strapiInstance.db.connection;
+      const hasCol = await knex.schema.hasColumn('up_users', 'avatar');
+      if (!hasCol) {
+        await knex.schema.alterTable('up_users', (table: any) => {
+          table.text('avatar').nullable();
+        });
+      }
+    } catch (e) {}
+
+    const isEmailChanging = email && email.trim().toLowerCase() !== user.email?.toLowerCase();
+    const isPasswordChanging = !!(newPassword && newPassword.trim());
+    const isAvatarChanging = avatar !== undefined;
+
+    // Password verification is required ONLY if changing email or password
+    if (isEmailChanging || isPasswordChanging) {
+      if (!currentPassword) {
+        return ctx.badRequest('Current password is required to update your email or password.');
+      }
+
+      try {
+        const userWithPassword = await strapiInstance.db.query('plugin::users-permissions.user').findOne({
+          where: { id: user.id }
+        });
+
+        if (!userWithPassword) {
+          return ctx.notFound('User not found.');
+        }
+
+        const isPasswordValid = await strapiInstance
+          .plugin('users-permissions')
+          .service('user')
+          .validatePassword(currentPassword, userWithPassword.password);
+
+        if (!isPasswordValid) {
+          return ctx.badRequest('Incorrect current password.');
+        }
+      } catch (err: any) {
+        return ctx.badRequest(err.message || 'Password verification failed.');
+      }
+    }
+
+    try {
+
+      const updateData: any = {};
+
+      // 3. Validate & update email
+      if (isEmailChanging) {
+        const trimmedEmail = email.trim().toLowerCase();
+        const existingUser = await strapiInstance.db.query('plugin::users-permissions.user').findOne({
+          where: { email: trimmedEmail, id: { $ne: user.id } }
+        });
+        if (existingUser) {
+          return ctx.badRequest('Email is already in use by another account.');
+        }
+        updateData.email = trimmedEmail;
+      }
+
+      // 4. Validate & update new password
+      if (isPasswordChanging) {
+        const validation = validatePasswordRequirements(newPassword.trim());
+        if (!validation.isValid) {
+          return ctx.badRequest(validation.error);
+        }
+        updateData.password = newPassword.trim();
+      }
+
+      // 5. Update avatar
+      if (isAvatarChanging) {
+        updateData.avatar = avatar || null;
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        await strapiInstance
+          .plugin('users-permissions')
+          .service('user')
+          .edit(user.id, updateData);
+      }
+
+      const safeUser = await strapiInstance.db.query('plugin::users-permissions.user').findOne({
+        where: { id: user.id },
+        populate: ['role']
+      });
+
+      return ctx.send({
+        id: safeUser.id,
+        documentId: safeUser.documentId,
+        username: safeUser.username,
+        email: safeUser.email,
+        avatar: safeUser.avatar || null,
+        role: safeUser.role
+      });
+
+    } catch (err: any) {
+      console.error('Profile update error:', err);
+      return ctx.badRequest(err.message || 'Failed to update profile.');
     }
   },
 
@@ -383,6 +511,234 @@ export default {
     } catch (err: any) {
       console.error('Error generating student detailed report:', err);
       return ctx.internalServerError('Failed to generate student report');
+    }
+  },
+
+  async getLeaderboard(ctx: any) {
+    const strapiInstance = (global as any).strapi;
+    const currentUser = await getAuthenticatedUser(ctx, strapiInstance);
+
+    try {
+      // 1. Fetch all non-staff users
+      const allUsers = await strapiInstance.db.query('plugin::users-permissions.user').findMany({
+        populate: ['role']
+      });
+
+      const students = allUsers.filter((u: any) => {
+        const roleType = u.role?.type;
+        return !['admin', 'instructor', 'content_manager'].includes(roleType);
+      });
+
+      // 2. Fetch all completed quiz attempts
+      const quizAttempts = await strapiInstance.documents('api::quiz-attempt.quiz-attempt').findMany({
+        filters: { status: { $eq: 'completed' } },
+        populate: { student: true, quiz: true },
+        limit: 10000
+      });
+
+      // 3. Fetch all enrollments with populated courses and lessons
+      const enrollments = await strapiInstance.documents('api::enrollment.enrollment').findMany({
+        populate: {
+          student: true,
+          course: {
+            populate: {
+              lessons: true
+            }
+          }
+        },
+        limit: 10000
+      });
+
+      // 4. Fetch all completed lesson progress
+      const lessonProgresses = await strapiInstance.documents('api::lesson-progress.lesson-progress').findMany({
+        filters: { completed: { $eq: true } },
+        populate: { student: true, lesson: true },
+        limit: 20000
+      });
+
+      // Map progress by student
+      const studentProgressMap = new Map<number, Set<string>>();
+      lessonProgresses.forEach((lp: any) => {
+        const studentId = lp.student?.id;
+        const lessonDocId = lp.lesson?.documentId || String(lp.lesson?.id);
+        if (studentId && lessonDocId) {
+          if (!studentProgressMap.has(studentId)) {
+            studentProgressMap.set(studentId, new Set<string>());
+          }
+          studentProgressMap.get(studentId)!.add(lessonDocId);
+        }
+      });
+
+      // Map enrollments by student
+      const studentEnrollmentsMap = new Map<number, any[]>();
+      enrollments.forEach((enr: any) => {
+        const studentId = enr.student?.id;
+        if (studentId) {
+          if (!studentEnrollmentsMap.has(studentId)) {
+            studentEnrollmentsMap.set(studentId, []);
+          }
+          studentEnrollmentsMap.get(studentId)!.push(enr);
+        }
+      });
+
+      // Map quiz attempts by student
+      const studentQuizAttemptsMap = new Map<number, any[]>();
+      quizAttempts.forEach((qa: any) => {
+        const studentId = qa.student?.id;
+        if (studentId) {
+          if (!studentQuizAttemptsMap.has(studentId)) {
+            studentQuizAttemptsMap.set(studentId, []);
+          }
+          studentQuizAttemptsMap.get(studentId)!.push(qa);
+        }
+      });
+
+      // Calculate aggregated metrics for each student
+      const leaderboardData = students.map((student: any) => {
+        const studentId = student.id;
+
+        // A. Quiz calculations
+        const attempts = studentQuizAttemptsMap.get(studentId) || [];
+        const totalAttempts = attempts.length;
+        const quizGroups = new Map<string, any[]>();
+        
+        let totalViolationScore = 0;
+        let totalViolationsCount = 0;
+        let totalScoreSum = 0;
+        let highestScore = 0;
+        let totalPercentageSum = 0;
+        let quizzesPassed = 0;
+
+        attempts.forEach((att: any) => {
+          const qId = att.quiz?.documentId || String(att.quiz?.id || 'unknown');
+          if (!quizGroups.has(qId)) quizGroups.set(qId, []);
+          quizGroups.get(qId)!.push(att);
+
+          const vScore = att.violationScore || 0;
+          totalViolationScore += vScore;
+          if (att.violationsLog && Array.isArray(att.violationsLog)) {
+            totalViolationsCount += att.violationsLog.length;
+          } else if (vScore > 0) {
+            totalViolationsCount += 1;
+          }
+
+          const score = att.score || 0;
+          const pct = att.percentage || 0;
+          totalScoreSum += score;
+          totalPercentageSum += pct;
+          if (score > highestScore) highestScore = score;
+          if (pct >= 60) quizzesPassed++;
+        });
+
+        const uniqueQuizzesTaken = quizGroups.size;
+        const totalRetakesCount = Math.max(0, totalAttempts - uniqueQuizzesTaken);
+        const averageQuizPercentage = totalAttempts > 0 ? Math.round(totalPercentageSum / totalAttempts) : 0;
+
+        // B. Course completion calculations
+        const userEnrollments = studentEnrollmentsMap.get(studentId) || [];
+        const completedLessonSet = studentProgressMap.get(studentId) || new Set<string>();
+        const totalLessonsCompleted = completedLessonSet.size;
+        
+        let fullyCompletedCourses = 0;
+        let totalEnrolledCourses = userEnrollments.length;
+
+        userEnrollments.forEach((enr: any) => {
+          const course = enr.course;
+          if (course && course.lessons && course.lessons.length > 0) {
+            const courseLessonDocIds = course.lessons.map((l: any) => l.documentId || String(l.id));
+            const allFinished = courseLessonDocIds.every((id: string) => completedLessonSet.has(id));
+            if (allFinished) fullyCompletedCourses++;
+          }
+        });
+
+        // C. Multi-Factor Leaderboard Score
+        // 1. Quiz Score: +10 pts per raw mark + 15 pts per passed quiz + 0.5x avg percentage
+        const quizPoints = Math.round((totalScoreSum * 10) + (quizzesPassed * 15) + (averageQuizPercentage * 0.5));
+        
+        // 2. Course Completion: +50 pts per fully finished course + 5 pts per completed lesson
+        const coursePoints = (fullyCompletedCourses * 50) + (totalLessonsCompleted * 5);
+        
+        // 3. Violation Deductions: -5 pts per violation score point
+        const violationPenalty = totalViolationScore * 5;
+
+        // 4. Retakes Factor: -2 pts per repeated retake
+        const retakePenalty = totalRetakesCount * 2;
+
+        const totalPoints = Math.max(0, quizPoints + coursePoints - violationPenalty - retakePenalty);
+
+        return {
+          id: student.id,
+          documentId: student.documentId,
+          username: student.username,
+          avatar: student.avatar || null,
+          createdAt: student.createdAt,
+          leaderboardPoints: totalPoints,
+          metrics: {
+            quizPoints,
+            coursePoints,
+            violationPenalty,
+            retakePenalty
+          },
+          quizPerformance: {
+            totalMarks: totalScoreSum,
+            highestScore,
+            quizzesPassed,
+            averagePercentage: averageQuizPercentage,
+            totalQuizzesAttempted: totalAttempts,
+            uniqueQuizzesCount: uniqueQuizzesTaken
+          },
+          courseCompletion: {
+            totalEnrolled: totalEnrolledCourses,
+            fullyCompletedCourses,
+            totalLessonsCompleted
+          },
+          violations: {
+            totalViolationScore,
+            totalViolationsCount
+          },
+          retakes: {
+            totalRetakesCount
+          }
+        };
+      });
+
+      // Sort by totalPoints descending, with comprehensive tie-breakers
+      leaderboardData.sort((a: any, b: any) => {
+        if (b.leaderboardPoints !== a.leaderboardPoints) return b.leaderboardPoints - a.leaderboardPoints;
+        if (b.quizPerformance.totalMarks !== a.quizPerformance.totalMarks) return b.quizPerformance.totalMarks - a.quizPerformance.totalMarks;
+        if (b.courseCompletion.fullyCompletedCourses !== a.courseCompletion.fullyCompletedCourses) return b.courseCompletion.fullyCompletedCourses - a.courseCompletion.fullyCompletedCourses;
+        if (a.violations.totalViolationScore !== b.violations.totalViolationScore) return a.violations.totalViolationScore - b.violations.totalViolationScore;
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
+
+      // Rank all students
+      leaderboardData.forEach((item: any, idx: number) => {
+        item.rank = idx + 1;
+      });
+
+      // Top 20
+      const top20 = leaderboardData.slice(0, 20);
+
+      // Locate current user's entry if logged in
+      let myRankData = null;
+      if (currentUser) {
+        const found = leaderboardData.find((s: any) => s.id === currentUser.id);
+        if (found) {
+          myRankData = found;
+        }
+      }
+
+      return ctx.send({
+        data: {
+          top20,
+          totalParticipants: leaderboardData.length,
+          myRank: myRankData
+        }
+      });
+
+    } catch (err: any) {
+      console.error('Error calculating leaderboard:', err);
+      return ctx.internalServerError('Failed to calculate leaderboard');
     }
   }
 };

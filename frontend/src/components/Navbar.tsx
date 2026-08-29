@@ -6,6 +6,8 @@ import { useLanguage } from '@/i18n/LanguageContext';
 import { useToast } from '@/context/ToastContext';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
+import PasswordRequirementsList from './PasswordRequirementsList';
+import { checkPasswordRequirements } from '@/utils/password';
 
 function timeAgo(dateParam: string | Date) {
   if (!dateParam) return '';
@@ -53,11 +55,95 @@ export default function Navbar() {
   // Profile Modal State
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileEmail, setProfileEmail] = useState('');
+  const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
   const [profileLoading, setProfileLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const saveAvatarDirectly = async (avatarData: string | null) => {
+    try {
+      const jwt = localStorage.getItem('jwt');
+      if (!jwt) return;
+      
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/update-profile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${jwt}`
+        },
+        body: JSON.stringify({
+          email: userObject?.email,
+          avatar: avatarData
+        })
+      });
+
+      if (res.ok) {
+        const updatedUser = await res.json();
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        setUserObject(updatedUser);
+        toast.success(avatarData ? 'Profile picture updated successfully!' : 'Profile picture removed!');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error?.message || 'Failed to save avatar');
+      }
+    } catch (e) {
+      console.error('Auto-save avatar failed:', e);
+    }
+  };
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 256;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          setProfileAvatar(dataUrl);
+          // Sync directly with backend without requiring password
+          saveAvatarDirectly(dataUrl);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
   
   // Menus
   const [showDropdown, setShowDropdown] = useState(false);
@@ -175,15 +261,31 @@ export default function Navbar() {
       const jwt = localStorage.getItem('jwt');
       const payload: any = {
         email: profileEmail,
-        currentPassword: currentPassword
+        avatar: profileAvatar
       };
       
-      if (newPassword) {
-        payload.password = newPassword;
+      if (currentPassword) {
+        payload.currentPassword = currentPassword;
       }
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/${userObject?.id}`, {
-        method: 'PUT',
+      if (newPassword && newPassword.trim()) {
+        const reqs = checkPasswordRequirements(newPassword.trim());
+        if (!reqs.isValid) {
+          let msg = 'Password requirements are not met.';
+          if (!reqs.minLength) msg = 'New password must be at least 12 characters.';
+          else if (!reqs.hasUppercase) msg = 'New password must contain at least 1 uppercase letter (A-Z).';
+          else if (!reqs.hasLowercase) msg = 'New password must contain at least 1 lowercase letter (a-z).';
+          else if (!reqs.hasSpecialChar) msg = 'New password must contain at least 1 sign or special character (!@#$%^&* etc.).';
+          setProfileError(msg);
+          toast.warning(msg);
+          setProfileLoading(false);
+          return;
+        }
+        payload.newPassword = newPassword.trim();
+      }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/update-profile`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${jwt}`
@@ -192,23 +294,19 @@ export default function Navbar() {
       });
 
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error?.message || 'Failed to update profile');
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error?.message || errData.message || errData.error || 'Failed to update profile');
       }
 
       const updatedUser = await res.json();
       localStorage.setItem('user', JSON.stringify(updatedUser));
       setUserObject(updatedUser);
-      setProfileSuccess('Profile updated successfully!');
+      setProfileSuccess('Profile and password updated successfully!');
       toast.success('Profile updated successfully!');
       
-      if (newPassword) {
-        setCurrentPassword('');
-        setNewPassword('');
-        setTimeout(() => setShowProfileModal(false), 2000);
-      } else {
-        setShowProfileModal(false);
-      }
+      setCurrentPassword('');
+      setNewPassword('');
+      setTimeout(() => setShowProfileModal(false), 1500);
       
     } catch (err: any) {
       const msg = err.message || 'Failed to update profile.';
@@ -281,7 +379,7 @@ export default function Navbar() {
                   <div className="relative flex items-center" ref={studentDropdownRef}>
                     <button 
                       onClick={() => setShowStudentDropdown(!showStudentDropdown)}
-                      className={`flex items-center gap-1 px-4 py-2 text-base font-medium rounded-lg transition-colors ${(isActive('/my-courses') || isActive('/track-progress')) ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-300 hover:text-emerald-400 hover:bg-emerald-500/10'}`}
+                      className={`flex items-center gap-1 px-4 py-2 text-base font-medium rounded-lg transition-colors ${(isActive('/my-courses') || isActive('/track-progress') || isActive('/leaderboard')) ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-300 hover:text-emerald-400 hover:bg-emerald-500/10'}`}
                     >
                       {t('nav.student')}
                       <svg className={`w-4 h-4 transition-transform duration-200 ${showStudentDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -292,6 +390,7 @@ export default function Navbar() {
                         <div className="py-1 flex flex-col">
                           <Link href="/my-courses" onClick={() => setShowStudentDropdown(false)} className={`px-4 py-2 text-sm font-medium transition-colors ${isActive('/my-courses') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-300 hover:bg-slate-800 hover:text-emerald-400'}`}>{t('nav.my_courses')}</Link>
                           <Link href="/track-progress" onClick={() => setShowStudentDropdown(false)} className={`px-4 py-2 text-sm font-medium transition-colors ${isActive('/track-progress') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-300 hover:bg-slate-800 hover:text-emerald-400'}`}>{t('nav.progress')}</Link>
+                          <Link href="/leaderboard" onClick={() => setShowStudentDropdown(false)} className={`px-4 py-2 text-sm font-medium transition-colors ${isActive('/leaderboard') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-300 hover:bg-slate-800 hover:text-emerald-400'}`}>{t('nav.leaderboard')}</Link>
                         </div>
                       </div>
                     )}
@@ -303,39 +402,113 @@ export default function Navbar() {
             {username ? (
               <div className="relative flex items-center gap-2 border-l border-white/10 pl-2 lg:pl-4" ref={dropdownRef}>
                 
-                {/* Notification Button */}
+                {/* Notification Button & Dropdown */}
                 <div className="relative flex items-center" ref={notifRef}>
                   <button 
                     onClick={() => {
                       setShowNotifications(!showNotifications);
                       if (!showNotifications) setShowDropdown(false);
                     }}
-                    className="p-2 text-slate-300 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors relative"
+                    className="p-2.5 text-slate-300 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-xl transition-all border border-transparent hover:border-emerald-500/30 relative cursor-pointer group"
+                    title={t('nav.notifications')}
                   >
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
                     {notifications.unread?.length > 0 && (
-                      <span className="absolute top-1.5 right-2 w-2 h-2 bg-red-500 rounded-full border border-slate-950"></span>
+                      <span className="absolute -top-1 -right-1 px-1.5 py-0.2 min-w-[18px] h-[18px] bg-rose-500 text-white font-mono text-[10px] font-bold rounded-full border-2 border-slate-950 flex items-center justify-center animate-pulse shadow-md shadow-rose-500/50">
+                        {notifications.unread.length > 9 ? '9+' : notifications.unread.length}
+                      </span>
                     )}
                   </button>
 
                   {showNotifications && (
-                    <div className="absolute right-0 top-full mt-2 w-80 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up origin-top-right z-50">
-                      <div className="px-4 py-3 border-b border-slate-800/50 bg-slate-800/20 flex items-center justify-between">
-                        <h3 className="font-semibold text-slate-200">{t('nav.notifications')}</h3>
-                        <div className="flex gap-2 text-xs font-medium">
-                          <button onClick={() => setActiveNotifTab('unread')} className={`px-2 py-1 rounded transition-colors ${activeNotifTab === 'unread' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>{t('nav.new')}</button>
-                          <button onClick={() => setActiveNotifTab('marked')} className={`px-2 py-1 rounded transition-colors ${activeNotifTab === 'marked' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>{t('nav.marked')}</button>
+                    <div className="absolute right-0 top-full mt-3 w-80 sm:w-96 bg-slate-900/95 backdrop-blur-2xl border border-white/15 rounded-3xl shadow-2xl overflow-hidden animate-fade-in-up origin-top-right z-50">
+                      
+                      {/* Dropdown Header */}
+                      <div className="px-5 py-4 border-b border-white/10 bg-slate-950/60 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">🔔</span>
+                          <h3 className="font-bold text-white text-sm sm:text-base tracking-tight">{t('nav.notifications')}</h3>
+                          {notifications.unread?.length > 0 && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                              {notifications.unread.length} {t('nav.new').toLowerCase()}
+                            </span>
+                          )}
                         </div>
+
+                        {activeNotifTab === 'unread' && notifications.unread?.length > 0 && (
+                          <button
+                            onClick={async () => {
+                              const jwt = localStorage.getItem('jwt');
+                              if (jwt && notifications.unread?.length) {
+                                notifications.unread.forEach((notif) => {
+                                  fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/lesson-messages/chat/${notif.lessonId}/read`, {
+                                    method: 'PUT',
+                                    headers: { 'Authorization': `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(notif.studentId ? { studentId: notif.studentId } : {})
+                                  }).catch(e => console.error(e));
+                                });
+                                setNotifications(prev => ({
+                                  unread: [],
+                                  marked: [...prev.unread, ...prev.marked]
+                                }));
+                                toast.success('All marked as read');
+                              }
+                            }}
+                            className="text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold transition-colors cursor-pointer hover:underline"
+                          >
+                            {t('nav.mark_all_read')}
+                          </button>
+                        )}
                       </div>
-                      <div className="max-h-96 overflow-y-auto">
+
+                      {/* Tab Pill Switcher */}
+                      <div className="p-2 border-b border-white/5 bg-slate-950/40 flex gap-1">
+                        <button 
+                          onClick={() => setActiveNotifTab('unread')} 
+                          className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            activeNotifTab === 'unread' 
+                              ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm shadow-emerald-500/10' 
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
+                          }`}
+                        >
+                          <span>{t('nav.new')}</span>
+                          <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${activeNotifTab === 'unread' ? 'bg-emerald-500/30 text-emerald-200' : 'bg-white/5 text-slate-500'}`}>
+                            {notifications.unread?.length || 0}
+                          </span>
+                        </button>
+                        <button 
+                          onClick={() => setActiveNotifTab('marked')} 
+                          className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            activeNotifTab === 'marked' 
+                              ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm shadow-emerald-500/10' 
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
+                          }`}
+                        >
+                          <span>{t('nav.marked')}</span>
+                          <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${activeNotifTab === 'marked' ? 'bg-emerald-500/30 text-emerald-200' : 'bg-white/5 text-slate-500'}`}>
+                            {notifications.marked?.length || 0}
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Notification Items List */}
+                      <div className="max-h-96 overflow-y-auto divide-y divide-white/5">
                         {(!notifications[activeNotifTab] || notifications[activeNotifTab].length === 0) ? (
-                          <div className="p-8 text-center text-slate-500 text-sm">
-                            {t('nav.no_notifications').replace('{tab}', activeNotifTab === 'unread' ? t('nav.new') : t('nav.marked'))}
+                          <div className="p-10 text-center space-y-2">
+                            <div className="w-12 h-12 rounded-2xl bg-white/5 text-slate-500 flex items-center justify-center mx-auto text-xl border border-white/5">
+                              🔕
+                            </div>
+                            <p className="text-xs sm:text-sm font-semibold text-slate-300">
+                              {t('nav.no_notifications').replace('{tab}', activeNotifTab === 'unread' ? t('nav.new') : t('nav.marked'))}
+                            </p>
+                            <p className="text-[11px] text-slate-500">
+                              {activeNotifTab === 'unread' ? 'You are all caught up!' : 'Read notifications will appear here.'}
+                            </p>
                           </div>
                         ) : (
-                          <div className="divide-y divide-slate-800/50">
+                          <div className="divide-y divide-white/5">
                             {notifications[activeNotifTab].map((notif: any) => (
                               <button
                                 key={`${notif.lessonId}-${notif.studentId}`}
@@ -358,10 +531,30 @@ export default function Navbar() {
                                   }
                                   router.push(`/courses/${notif.courseId}/lesson/${notif.lessonId}`);
                                 }}
-                                className="w-full text-left px-4 py-3 hover:bg-slate-800/50 transition-colors"
+                                className="w-full text-left p-4 hover:bg-slate-800/60 transition-all flex items-start gap-3.5 group cursor-pointer"
                               >
-                                <p className="text-sm text-slate-300">{notif.title}</p>
-                                <p className="text-xs text-slate-500 mt-1">{timeAgo(notif.createdAt)}</p>
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500/20 to-blue-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center shrink-0 text-sm font-bold shadow-sm">
+                                  💬
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <p className="text-xs sm:text-sm font-semibold text-slate-200 group-hover:text-white truncate">
+                                      {notif.title}
+                                    </p>
+                                    {activeNotifTab === 'unread' && (
+                                      <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-sm shadow-emerald-400"></span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-1 font-mono">
+                                    <svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>{timeAgo(notif.createdAt)}</span>
+                                  </div>
+                                </div>
+                                <div className="text-slate-500 group-hover:text-white group-hover:translate-x-0.5 transition-all text-xs font-bold shrink-0 self-center">
+                                  →
+                                </div>
                               </button>
                             ))}
                           </div>
@@ -376,9 +569,19 @@ export default function Navbar() {
                     setShowDropdown(!showDropdown);
                     if (!showDropdown) setShowNotifications(false);
                   }}
-                  className="cursor-pointer flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 bg-slate-800/50 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 rounded-lg text-sm font-medium text-slate-200 hover:text-emerald-400 transition-all shadow-sm"
+                  className="cursor-pointer flex items-center gap-2 px-2.5 sm:px-3 py-1.5 bg-slate-800/50 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl text-sm font-medium text-slate-200 hover:text-emerald-400 transition-all shadow-sm"
                 >
-                  <svg className="w-4 h-4 text-emerald-500 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                  {userObject?.avatar ? (
+                    <img 
+                      src={userObject.avatar} 
+                      alt={username || ''} 
+                      className="w-5 h-5 rounded-full object-cover border border-emerald-500/40" 
+                    />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-[10px] flex items-center justify-center border border-emerald-500/30">
+                      {username ? username.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
                   <span className="max-w-[80px] sm:max-w-[120px] truncate">{username}</span>
                   <svg className={`w-4 h-4 transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
@@ -395,6 +598,7 @@ export default function Navbar() {
                           setCurrentPassword('');
                           setNewPassword('');
                           setProfileEmail(userObject?.email || '');
+                          setProfileAvatar(userObject?.avatar || null);
                           setShowProfileModal(true);
                         }}
                         className="cursor-pointer w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
@@ -486,6 +690,9 @@ export default function Navbar() {
                 <Link href="/track-progress" className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive('/track-progress') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
                   {t('nav.progress')}
                 </Link>
+                <Link href="/leaderboard" className={`block px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive('/leaderboard') ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
+                  {t('nav.leaderboard')}
+                </Link>
               </div>
             )}
           </div>
@@ -494,81 +701,244 @@ export default function Navbar() {
 
       {/* Profile Modal */}
       {showProfileModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in-up" style={{ animationDuration: '0.3s' }}>
-          <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl p-6 relative">
-            <button 
-              onClick={() => setShowProfileModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-            
-            <h3 className="text-2xl font-bold text-white mb-6">{t('nav.profile_settings')}</h3>
-            
-            {profileError && (
-              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg">
-                {profileError}
-              </div>
-            )}
-            
-            {profileSuccess && (
-              <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm rounded-lg">
-                {profileSuccess}
-              </div>
-            )}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xl animate-fade-in-up" style={{ animationDuration: '0.2s' }}>
+          <div className="bg-slate-900/95 border border-white/15 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden relative backdrop-blur-2xl">
+            {/* Modal Ambient Glow */}
+            <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-            <form onSubmit={handleProfileUpdate} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">{t('nav.email_address')}</label>
-                <input 
-                  type="email" 
-                  value={profileEmail}
-                  onChange={(e) => setProfileEmail(e.target.value)}
-                  className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
-                  required
-                />
+            {/* Modal Header */}
+            <div className="p-6 sm:p-7 border-b border-white/10 relative z-10 bg-slate-950/40 flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                {/* Interactive Avatar Upload Circle */}
+                <div className="relative group/avatar cursor-pointer shrink-0" onClick={() => fileInputRef.current?.click()}>
+                  {profileAvatar ? (
+                    <img 
+                      src={profileAvatar} 
+                      alt="Profile" 
+                      className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500/40 shadow-lg shadow-emerald-500/20" 
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-slate-950 font-black text-2xl shadow-lg shadow-emerald-500/20">
+                      {username ? username.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
+                  
+                  {/* Camera overlay on hover */}
+                  <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-[2px] rounded-2xl opacity-0 group-hover/avatar:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
+                    <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span className="text-[9px] font-bold text-emerald-300 mt-0.5">Edit</span>
+                  </div>
+
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleAvatarFileChange} 
+                    accept="image/png, image/jpeg, image/webp, image/gif" 
+                    className="hidden" 
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold text-white tracking-tight">{username || 'User Profile'}</h3>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 capitalize">
+                      {userRole || 'Student'}
+                    </span>
+                  </div>
+                  
+                  {/* Photo Actions */}
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer flex items-center gap-1"
+                    >
+                      <span>📷 {profileAvatar ? t('nav.change_photo') : t('nav.upload_photo')}</span>
+                    </button>
+                    {profileAvatar && (
+                      <>
+                        <span className="text-slate-600 text-xs">•</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProfileAvatar(null);
+                            saveAvatarDirectly(null);
+                          }}
+                          className="text-xs font-semibold text-rose-400 hover:text-rose-300 hover:underline cursor-pointer"
+                        >
+                          {t('nav.remove_photo')}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
+
+              <button 
+                onClick={() => setShowProfileModal(false)}
+                className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/5 transition-all"
+                title="Close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Form Body */}
+            <div className="p-6 sm:p-7 space-y-6 relative z-10">
+              {profileError && (
+                <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded-2xl flex items-center gap-2.5 animate-fade-in-up">
+                  <svg className="w-4 h-4 shrink-0 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>{profileError}</span>
+                </div>
+              )}
               
-              <div className="border-t border-white/5 my-4 pt-4">
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">{t('nav.new_password')}</label>
-                <input 
-                  type="password" 
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder={t('nav.leave_blank')}
-                  className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
-                />
-              </div>
+              {profileSuccess && (
+                <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs rounded-2xl flex items-center gap-2.5 animate-fade-in-up">
+                  <svg className="w-4 h-4 shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>{profileSuccess}</span>
+                </div>
+              )}
 
-              <div className="bg-slate-950/50 border border-red-500/20 rounded-xl p-4 mt-6">
-                <label className="block text-sm font-bold text-red-400 mb-2">{t('nav.current_password')}</label>
-                <input 
-                  type="password" 
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder={t('nav.enter_current')}
-                  className="w-full bg-slate-900 border border-red-500/30 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all placeholder:text-slate-600"
-                  required
-                />
-              </div>
+              <form onSubmit={handleProfileUpdate} className="space-y-5">
+                
+                {/* Email Field */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206" />
+                    </svg>
+                    <span>{t('nav.email_address')}</span>
+                  </label>
+                  <input 
+                    type="email" 
+                    value={profileEmail}
+                    onChange={(e) => setProfileEmail(e.target.value)}
+                    className="w-full bg-slate-950/80 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all shadow-inner"
+                    required
+                  />
+                </div>
+                
+                {/* New Password Field */}
+                <div className="space-y-1.5 pt-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                    <span>{t('nav.new_password')}</span>
+                  </label>
+                  <div className="relative">
+                    <input 
+                      type={showNewPassword ? 'text' : 'password'} 
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder={t('nav.leave_blank')}
+                      className="w-full bg-slate-950/80 border border-white/10 rounded-2xl pl-4 pr-11 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all shadow-inner placeholder:text-slate-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      title={showNewPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showNewPassword ? (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {newPassword && newPassword.trim() && (
+                    <PasswordRequirementsList password={newPassword} className="mt-2" />
+                  )}
+                  <p className="text-[11px] text-slate-500">Leave blank if you do not want to change your password.</p>
+                </div>
 
-              <div className="pt-4 flex gap-3">
-                <button 
-                  type="button"
-                  onClick={() => setShowProfileModal(false)}
-                  className="flex-1 px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl font-medium transition-colors"
-                >
-                  {t('nav.cancel')}
-                </button>
-                <button 
-                  type="submit"
-                  disabled={profileLoading || !currentPassword}
-                  className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50"
-                >
-                  {profileLoading ? t('nav.saving') : t('nav.save_changes')}
-                </button>
-              </div>
-            </form>
+                {/* Current Password Verification Card */}
+                {((newPassword && newPassword.trim()) || (profileEmail && profileEmail.trim().toLowerCase() !== userObject?.email?.toLowerCase())) && (
+                  <div className="bg-slate-950/70 border border-rose-500/20 rounded-2xl p-4 space-y-2 mt-4 shadow-inner">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+                        <span>🛡️ {t('nav.current_password')}</span>
+                      </label>
+                      <span className="text-[10px] text-rose-400/80 font-mono font-bold">Required to save password/email</span>
+                    </div>
+                    <div className="relative">
+                      <input 
+                        type={showCurrentPassword ? 'text' : 'password'} 
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder={t('nav.enter_current')}
+                        className="w-full bg-slate-900 border border-rose-500/30 rounded-xl pl-4 pr-11 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-all placeholder:text-slate-600 shadow-inner"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors cursor-pointer"
+                        title={showCurrentPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showCurrentPassword ? (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-slate-500">Enter your current password to authorize email or password changes.</p>
+                  </div>
+                )}
+
+                {/* Footer Action Buttons */}
+                <div className="pt-3 flex items-center gap-3">
+                  <button 
+                    type="button"
+                    onClick={() => setShowProfileModal(false)}
+                    className="flex-1 px-4 py-3 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs sm:text-sm font-semibold transition-all border border-white/5 cursor-pointer"
+                  >
+                    {t('nav.cancel')}
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={
+                      profileLoading || 
+                      Boolean(((newPassword && newPassword.trim()) || (profileEmail && profileEmail.trim().toLowerCase() !== userObject?.email?.toLowerCase())) && !currentPassword)
+                    }
+                    className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {profileLoading ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>{t('nav.saving')}</span>
+                      </>
+                    ) : (
+                      <span>{t('nav.save_changes')}</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

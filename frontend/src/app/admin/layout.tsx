@@ -7,6 +7,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [username, setUsername] = useState('Admin');
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const verifySecurely = async () => {
@@ -16,7 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return;
       }
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/me?populate=role`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}/api/users/me?populate=role,avatar`, {
           headers: { 'Authorization': `Bearer ${jwt}` }
         });
         if (!res.ok) throw new Error('Unauthorized');
@@ -25,7 +28,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const userStr = localStorage.getItem('user');
         if (userStr && meData?.role) {
            const user = JSON.parse(userStr);
-           localStorage.setItem('user', JSON.stringify({ ...user, role: meData.role }));
+           setUsername(meData.username || user.username || 'Admin');
+           setAvatar(meData.avatar?.url || user.avatar || null);
+           localStorage.setItem('user', JSON.stringify({ ...user, ...meData, role: meData.role }));
+        } else if (meData) {
+           setUsername(meData.username || 'Admin');
+           setAvatar(meData.avatar?.url || null);
         }
         
         if (meData?.role?.type !== 'admin') {
@@ -60,37 +68,84 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-slate-950 flex text-slate-100">
-      {/* Sidebar */}
-      <aside className="w-72 bg-slate-900/50 backdrop-blur-xl border-r border-white/5 flex flex-col">
-        <div className="p-8">
-          <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-500 tracking-tight">Admin Panel</h2>
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-950 flex flex-col md:flex-row text-slate-100">
+      
+      {/* Mobile Toggle Bar */}
+      <div className="md:hidden bg-slate-900 border-b border-white/10 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-white">Admin Console</span>
+          <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">Admin</span>
         </div>
-        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Sidebar */}
+      <aside className={`${mobileOpen ? 'block' : 'hidden'} md:block w-full md:w-72 bg-slate-900/60 backdrop-blur-2xl border-r border-white/10 flex flex-col shrink-0 z-20`}>
+        <div className="p-6 border-b border-white/10 space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">👑</span>
+            <h2 className="text-xl font-extrabold text-white tracking-tight">Admin Console</h2>
+          </div>
+          <p className="text-xs text-slate-400">Full platform controls & oversight</p>
+        </div>
+
+        <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
           {links.map((link) => {
             const isActive = pathname === link.href;
             return (
               <Link 
                 key={link.href} 
                 href={link.href}
-                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 ${
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 text-xs sm:text-sm font-semibold ${
                   isActive 
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_-3px_rgba(16,185,129,0.15)]' 
+                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-md shadow-emerald-500/10' 
                     : 'hover:bg-white/5 text-slate-400 hover:text-slate-200 border border-transparent'
                 }`}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={link.icon} />
                 </svg>
-                <span className="font-semibold text-sm">{link.label}</span>
+                <span>{link.label}</span>
               </Link>
             );
           })}
         </nav>
+
+        {/* Sidebar Footer User Info */}
+        <div className="p-4 border-t border-white/10 bg-slate-950/40 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2.5">
+            {avatar ? (
+              <img 
+                src={avatar} 
+                alt={username} 
+                className="w-8 h-8 rounded-xl object-cover border border-emerald-500/40 shadow-sm" 
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold">
+                {username.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="truncate max-w-[120px]">
+              <p className="font-bold text-white truncate">{username}</p>
+              <p className="text-[10px] text-emerald-400">Administrator</p>
+            </div>
+          </div>
+          <Link href="/" className="text-slate-400 hover:text-white text-[11px] flex items-center gap-1 font-mono">
+            <span>Site ↗</span>
+          </Link>
+        </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-10 animate-fade-in-up">
+      {/* Main Content Area */}
+      <main className="flex-1 min-w-0 overflow-y-auto p-4 sm:p-8 lg:p-10 animate-fade-in-up">
         {children}
       </main>
     </div>
