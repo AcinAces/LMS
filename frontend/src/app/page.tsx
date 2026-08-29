@@ -44,19 +44,19 @@ export default async function Home() {
   const studentCount = siteStats.studentCount || 0;
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
       {/* Hero Section */}
-      <section className="relative min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center overflow-hidden pt-12 pb-20 px-4 sm:px-6 lg:px-8">
+      <section className="relative min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center overflow-hidden pt-12 pb-20 px-3 sm:px-6 lg:px-8 w-full max-w-full">
         <AnimatedBackground />
         
         {/* Ambient Glow orbs */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-emerald-500/20 blur-[130px] rounded-full pointer-events-none animate-pulse-glow" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-[500px] md:w-[650px] h-[320px] sm:h-[500px] md:h-[650px] bg-emerald-500/20 blur-[100px] sm:blur-[130px] rounded-full pointer-events-none animate-pulse-glow" />
 
-        <div className="relative z-10 max-w-5xl mx-auto text-center mt-8 animate-fade-in-up space-y-4">
+        <div className="relative z-10 w-full max-w-5xl mx-auto text-center mt-6 sm:mt-8 animate-fade-in-up space-y-4 px-1">
           
           {/* Animated SVG Glowing Logo */}
-          <div className="flex justify-center mb-6">
-            <svg width="400" height="90" viewBox="0 0 400 90" className="drop-shadow-[0_0_35px_rgba(52,211,153,0.4)] hover:scale-105 transition-transform duration-300">
+          <div className="flex justify-center mb-4 sm:mb-6 w-full overflow-hidden">
+            <svg viewBox="0 0 400 90" className="w-full max-w-[260px] sm:max-w-[340px] md:max-w-[400px] h-auto drop-shadow-[0_0_25px_rgba(52,211,153,0.4)] sm:drop-shadow-[0_0_35px_rgba(52,211,153,0.4)] hover:scale-105 transition-transform duration-300">
               <defs>
                 <linearGradient id="heroGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                   <stop offset="0%" stopColor="#34d399" />

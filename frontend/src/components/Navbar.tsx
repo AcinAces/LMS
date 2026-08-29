@@ -324,8 +324,8 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-40 bg-slate-950/70 backdrop-blur-xl border-b border-white/5 text-slate-100 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+      <nav className="fixed top-0 left-0 right-0 z-40 bg-slate-950/70 backdrop-blur-xl border-b border-white/5 text-slate-100 transition-all duration-300 w-full max-w-full">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
           
           {/* Left Side */}
           <div className="flex-shrink-0 flex items-center">
@@ -624,7 +624,7 @@ export default function Navbar() {
             ) : (
               <Link 
                 href="/login" 
-                className="px-4 sm:px-6 py-2 sm:py-2.5 text-sm sm:text-base font-medium text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg shadow-lg shadow-emerald-500/20 transition-all transform hover:-translate-y-0.5"
+                className="px-3 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-base font-medium text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg shadow-lg shadow-emerald-500/20 transition-all transform hover:-translate-y-0.5 whitespace-nowrap"
               >
                 {t('nav.login')}
               </Link>

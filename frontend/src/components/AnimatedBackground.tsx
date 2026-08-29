@@ -204,8 +204,8 @@ export default function AnimatedBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full -z-10 bg-slate-950"
-      style={{ pointerEvents: 'none', width: '100vw', height: '100vh' }}
+      className="fixed top-0 left-0 w-full h-full -z-10 bg-slate-950 pointer-events-none"
+      style={{ width: '100%', height: '100%' }}
     />
   );
 }

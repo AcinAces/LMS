@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Hind_Siliguri } from "next/font/google";
 import { cookies } from "next/headers";
 import "./globals.css";
@@ -31,6 +31,12 @@ export const metadata: Metadata = {
   description: "Master your coding skills with interactive lessons.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -47,14 +53,14 @@ export default async function RootLayout({
       lang={locale} 
       data-scroll-behavior="smooth" 
       style={{ "--font-sans": `var(${activeFont})` } as React.CSSProperties}
-      className={`${hindSiliguri.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased scroll-smooth`}
+      className={`${hindSiliguri.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased scroll-smooth overflow-x-hidden`}
     >
-      <body className="min-h-full flex flex-col bg-slate-950 text-slate-50 selection:bg-emerald-500 selection:text-white">
+      <body className="min-h-full flex flex-col bg-slate-950 text-slate-50 selection:bg-emerald-500 selection:text-white overflow-x-hidden w-full max-w-full">
         <LanguageProvider locale={locale} dict={dict}>
           <ToastProvider>
             <ScrollbarHider />
             <Navbar />
-            <main className="flex-grow pt-16 animate-fade-in-up">
+            <main className="flex-grow pt-16 animate-fade-in-up w-full max-w-full overflow-x-hidden">
               {children}
             </main>
             <Footer />

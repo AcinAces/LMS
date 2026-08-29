@@ -112,36 +112,36 @@ export default function MiniCodingGame() {
   const rank = getRank(score);
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto mt-10 mb-4">
+    <div className="relative w-full max-w-2xl mx-auto mt-6 sm:mt-10 mb-4 overflow-hidden">
       {/* Ambient Glow */}
-      <div className="absolute -top-10 -left-10 w-72 h-72 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none animate-pulse-glow" />
-      <div className="absolute -bottom-10 -right-10 w-72 h-72 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none animate-pulse-glow" style={{ animationDelay: '2s' }} />
+      <div className="absolute -top-10 -left-10 w-48 sm:w-72 h-48 sm:h-72 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none animate-pulse-glow" />
+      <div className="absolute -bottom-10 -right-10 w-48 sm:w-72 h-48 sm:h-72 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none animate-pulse-glow" style={{ animationDelay: '2s' }} />
 
       {/* Main Game Container */}
-      <div className="relative z-10 bg-slate-950/90 border border-white/15 rounded-3xl p-6 sm:p-8 backdrop-blur-2xl shadow-2xl space-y-6 hover:border-emerald-500/40 transition-all text-left">
+      <div className="relative z-10 bg-slate-950/90 border border-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 backdrop-blur-2xl shadow-2xl space-y-5 sm:space-y-6 hover:border-emerald-500/40 transition-all text-left">
         
         {/* Game Header Row */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/10">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl">🎮</span>
+        <div className="flex items-center justify-between gap-2 sm:gap-3 pb-3 sm:pb-4 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            <span className="text-lg sm:text-xl">🎮</span>
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-white leading-tight">
+              <h3 className="text-sm sm:text-lg font-bold text-white leading-tight">
                 Quick Dev Quiz
               </h3>
-              <p className="text-[11px] text-slate-400">Guess the output / solve the snippet</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-400">Guess the output / solve the snippet</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Streak Badge */}
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900 border border-white/10 text-xs font-mono">
+            <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg sm:rounded-xl bg-slate-900 border border-white/10 text-[11px] sm:text-xs font-mono">
               <span>🔥</span>
               <span className="font-bold text-amber-400">{streak}</span>
-              <span className="text-slate-500 text-[10px]">streak</span>
+              <span className="text-slate-500 text-[9px] sm:text-[10px] hidden xs:inline">streak</span>
             </div>
 
             {/* Score Badge */}
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono font-bold text-emerald-400">
+            <div className="flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg sm:rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] sm:text-xs font-mono font-bold text-emerald-400">
               <span>{score} pts</span>
             </div>
 
