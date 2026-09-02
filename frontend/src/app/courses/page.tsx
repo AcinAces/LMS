@@ -147,7 +147,7 @@ export default function CoursesPage() {
                   ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' 
                   : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
               }`}>
-                {isContest ? '🏆 Contest' : '📖 Theory'}
+                {isContest ? `🏆 ${t('courses.contest_badge')}` : `📖 ${t('courses.theory_badge')}`}
               </span>
 
               {course.courseTag ? course.courseTag.split(',').slice(0, 2).map((tag, i) => (
@@ -260,7 +260,7 @@ export default function CoursesPage() {
           </h1>
           
           <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
-            Explore curated programming tracks, algorithmic problem solving, and comprehensive video lessons taught by expert engineers.
+            {t('courses.subtitle')}
           </p>
 
           {/* Type Filter Switcher Tabs */}
@@ -273,7 +273,7 @@ export default function CoursesPage() {
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              All Courses ({courses.length})
+              {t('courses.all_courses_count', { count: courses.length })}
             </button>
             <button
               onClick={() => setSelectedType('Theory')}
@@ -283,7 +283,7 @@ export default function CoursesPage() {
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              Theory ({theoryCount})
+              {t('courses.theory_count', { count: theoryCount })}
             </button>
             <button
               onClick={() => setSelectedType('Contest')}
@@ -293,7 +293,7 @@ export default function CoursesPage() {
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              Contests ({contestCount})
+              {t('courses.contest_count', { count: contestCount })}
             </button>
           </div>
         </div>
@@ -344,7 +344,7 @@ export default function CoursesPage() {
                 <option value="oldest" className="bg-slate-900">{t('courses.oldest_first')}</option>
                 <option value="a-z" className="bg-slate-900">{t('courses.title_az')}</option>
                 <option value="z-a" className="bg-slate-900">{t('courses.title_za')}</option>
-                <option value="lessons" className="bg-slate-900">Most Lessons</option>
+                <option value="lessons" className="bg-slate-900">{t('courses.most_lessons')}</option>
               </select>
               <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -357,7 +357,7 @@ export default function CoursesPage() {
           {/* Quick Tag Pill Filters */}
           {availableTags.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-1">Tags:</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-1">{t('courses.tags_label')}</span>
               <button
                 onClick={() => setSelectedTag('all')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
@@ -366,7 +366,7 @@ export default function CoursesPage() {
                     : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 border border-white/5'
                 }`}
               >
-                All Tags
+                {t('courses.all_tags')}
               </button>
               {availableTags.map((tag) => (
                 <button
@@ -404,7 +404,7 @@ export default function CoursesPage() {
             <div className="w-16 h-16 bg-slate-800 rounded-2xl mx-auto flex items-center justify-center text-3xl text-slate-400">
               🔍
             </div>
-            <h3 className="text-xl font-bold text-white">No courses match your filters</h3>
+            <h3 className="text-xl font-bold text-white">{t('courses.no_matching')}</h3>
             <p className="text-slate-400 text-sm">
               {t('courses.no_courses')}
             </p>
@@ -412,13 +412,13 @@ export default function CoursesPage() {
               onClick={() => { setSearchQuery(''); setSelectedTag('all'); setSelectedType('all'); }}
               className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-lg shadow-emerald-500/20"
             >
-              Reset Filters
+              {t('courses.reset_filters')}
             </button>
           </div>
         ) : (
           <div className="space-y-8 animate-fade-in-up">
             <div className="flex items-center justify-between text-xs text-slate-400 px-1 font-mono">
-              <span>Showing <strong className="text-emerald-400 font-bold">{filteredCourses.length}</strong> of {courses.length} courses</span>
+              <span>{t('courses.showing_count', { filtered: filteredCourses.length, total: courses.length })}</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">

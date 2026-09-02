@@ -54,10 +54,7 @@ int binarySearch(const vector<int>& arr, int target) {
 $\Omega$ notation gives the lower bound of an algorithm's performance, defining the best-case execution duration.
 
 ### 3. Big-Theta Notation ($\Theta$) - Tight Bound
-$\Theta$ defines both the upper and lower bounds simultaneously. An algorithm is $\Theta(g(n))$ if and only if it is both $O(g(n))$ and $\Omega(g(n))$.
-
----
-*Created with care by Acin's LMS team.*`
+$\Theta$ defines both the upper and lower bounds simultaneously. An algorithm is $\Theta(g(n))$ if and only if it is both $O(g(n))$ and $\Omega(g(n))$.`
   },
   {
     topic: 'Data Structure and Algorithms',
@@ -95,10 +92,7 @@ def fib_iterative(n):
 ### Key Optimization Tips
 1. **Reuse buffers** instead of allocating new arrays inside tight loops.
 2. Replace recursive implementations with iterative counterparts when stack overflow is a risk ($N > 10^5$).
-3. Utilize bitsets or bit manipulation for state management when boolean arrays require heavy memory.
-
----
-*Created with care by Acin's LMS team.*`
+3. Utilize bitsets or bit manipulation for state management when boolean arrays require heavy memory.`
   },
 
   // --- Maths & Recursion ---
@@ -149,10 +143,7 @@ long long extgcd(long long a, long long b, long long &x, long long &y) {
     y = x1 - y1 * (a / b);
     return d;
 }
-\`\`\`
-
----
-*Created with care by Acin's LMS team.*`
+\`\`\``
   },
   {
     topic: 'Data Structure and Algorithms',
@@ -186,10 +177,7 @@ vector<bool> sieve(int n) {
 \`\`\`
 
 ### Smallest Prime Factor (SPF) for $O(\\log N)$ Queries
-By storing the Smallest Prime Factor for each number, multiple factorization queries can be answered in $O(\\log N)$ time.
-
----
-*Created with care by Acin's LMS team.*`
+By storing the Smallest Prime Factor for each number, multiple factorization queries can be answered in $O(\\log N)$ time.`
   },
 
   // --- Array & String ---
@@ -227,10 +215,7 @@ int maxSubArray(const vector<int>& nums) {
 
 ### Complexity
 - **Time Complexity:** $O(N)$
-- **Space Complexity:** $O(1)$
-
----
-*Created with care by Acin's LMS team.*`
+- **Space Complexity:** $O(1)$`
   },
   {
     topic: 'Data Structure and Algorithms',
@@ -261,10 +246,7 @@ int lengthOfLongestSubstring(string s) {
     }
     return maxLen;
 }
-\`\`\`
-
----
-*Created with care by Acin's LMS team.*`
+\`\`\``
   },
 
   // ==========================================
@@ -292,10 +274,7 @@ The Critical Rendering Path (CRP) is the sequence of steps the browser undergoes
 ### Best Practices for High Performance:
 - Minimize render-blocking CSS and JS using \`defer\` or \`async\`.
 - Reduce layout thrashing by batching DOM reads and writes.
-- Utilize CSS transforms and opacity for smooth 60fps animations.
-
----
-*Created with care by Acin's LMS team.*`
+- Utilize CSS transforms and opacity for smooth 60fps animations.`
   },
   {
     topic: 'Web Development',
@@ -327,10 +306,7 @@ Best for overall page scaffolding, complex dashboards, and responsive card colle
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
 }
-\`\`\`
-
----
-*Created with care by Acin's LMS team.*`
+\`\`\``
   },
 
   // --- Backend Development ---
@@ -365,10 +341,7 @@ const getCourses = async (req, res, next) => {
     next(error);
   }
 };
-\`\`\`
-
----
-*Created with care by Acin's LMS team.*`
+\`\`\``
   },
 
   // --- DevOps ---
@@ -400,10 +373,7 @@ COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
 CMD ["node", "dist/main.js"]
-\`\`\`
-
----
-*Created with care by Acin's LMS team.*`
+\`\`\``
   },
 
   // ==========================================
@@ -430,10 +400,7 @@ $$J(w, b) = \\frac{1}{2m} \\sum_{i=1}^m (\\hat{y}^{(i)} - y^{(i)})^2$$
 ### 2. Logistic Regression (Classification)
 Uses the Sigmoid activation function $\\sigma(z)$ to map predictions into probabilities $[0, 1]$:
 
-$$\\sigma(z) = \\frac{1}{1 + e^{-z}}$$
-
----
-*Created with care by Acin's LMS team.*`
+$$\\sigma(z) = \\frac{1}{1 + e^{-z}}$$`
   },
 
   // --- Deep Learning ---
@@ -451,10 +418,7 @@ Artificial Neural Networks (ANNs) consist of layered nodes connecting input feat
 ### Key Activation Functions:
 - **ReLU**: $f(x) = \\max(0, x)$ (Solves vanishing gradient in deep layers)
 - **Softmax**: Converts vector of logits into probability distribution for multiclass classification.
-- **GELU / LeakyReLU**: Prevents dead neurons.
-
----
-*Created with care by Acin's LMS team.*`
+- **GELU / LeakyReLU**: Prevents dead neurons.`
   },
 
   // --- Data Analysis ---
@@ -478,10 +442,7 @@ print(df.describe().T)
 
 # Missing values handling
 df.fillna(df.median(numeric_only=True), inplace=True)
-\`\`\`
-
----
-*Created with care by Acin's LMS team.*`
+\`\`\``
   },
 
   // ==========================================
@@ -500,10 +461,7 @@ Gradient Descent is the backbone of model optimization. Finding the global minim
 ### Comparison of Optimizers:
 1. **SGD (Stochastic Gradient Descent)**: Updates parameters per single sample or mini-batch; noisy but escapes shallow local minima.
 2. **RMSProp**: Normalizes gradients using moving average of squared gradients.
-3. **Adam (Adaptive Moment Estimation)**: Combines Momentum (first moment) and RMSProp (second moment), making it the default choice for deep models.
-
----
-*Created with care by Acin's LMS team.*`
+3. **Adam (Adaptive Moment Estimation)**: Combines Momentum (first moment) and RMSProp (second moment), making it the default choice for deep models.`
   },
 
   // --- Unsupervised Learning ---
@@ -522,10 +480,7 @@ Unsupervised learning algorithms identify intrinsic patterns and dimensional red
 - Recompute centroids until convergence.
 
 ### 2. Principal Component Analysis (PCA)
-Orthogonal linear transformation that projects high-dimensional data onto eigenvectors of greatest variance.
-
----
-*Created with care by Acin's LMS team.*`
+Orthogonal linear transformation that projects high-dimensional data onto eigenvectors of greatest variance.`
   },
 
   // --- Reinforcement Learning ---
@@ -541,10 +496,7 @@ Reinforcement Learning (RL) trains agents to make sequential decisions in an env
 ### Bellman Equation
 $$Q(s, a) = R(s, a) + \\gamma \\max_{a'} Q(s', a')$$
 
-Where $\\gamma \\in [0, 1)$ is the discount factor for future rewards.
-
----
-*Created with care by Acin's LMS team.*`
+Where $\\gamma \\in [0, 1)$ is the discount factor for future rewards.`
   },
 
   // ==========================================
@@ -564,10 +516,7 @@ Understanding how Python manages object allocations and references prevents memo
 Python primarily uses **reference counting**. When an object's reference counter drops to 0, its memory is instantly deallocated. A secondary **cyclic garbage collector** detects circular references across generations (Gen 0, 1, 2).
 
 ### The Global Interpreter Lock (GIL)
-The GIL is a mutex that protects access to Python objects, preventing multiple native threads from executing Python bytecodes simultaneously in CPython. For CPU-bound tasks, use \`multiprocessing\` or C-extensions instead of threading.
-
----
-*Created with care by Acin's LMS team.*`
+The GIL is a mutex that protects access to Python objects, preventing multiple native threads from executing Python bytecodes simultaneously in CPython. For CPU-bound tasks, use \`multiprocessing\` or C-extensions instead of threading.`
   },
 
   // --- Django & Web ---
@@ -592,10 +541,7 @@ class CourseSerializer(serializers.ModelSerializer):
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.filter(is_published=True)
     serializer_class = CourseSerializer
-\`\`\`
-
----
-*Created with care by Acin's LMS team.*`
+\`\`\``
   },
 
   // --- Data Science with Python ---
@@ -615,10 +561,7 @@ import numpy as np
 A = np.random.randn(1000, 500)
 B = np.random.randn(500, 200)
 C = np.dot(A, B)
-\`\`\`
-
----
-*Created with care by Acin's LMS team.*`
+\`\`\``
   },
 
   // ==========================================
@@ -636,10 +579,7 @@ The Java Virtual Machine (JVM) divides memory into the Heap (Young Generation: E
 
 ### Modern Garbage Collectors:
 - **G1 GC (Garbage-First)**: Divides heap into equal regions; optimizes for high throughput and bounded pause times.
-- **ZGC (Z Garbage Collector)**: Concurrent, scalable, ultra-low latency collector with sub-millisecond pause times for TB-scale heaps.
-
----
-*Created with care by Acin's LMS team.*`
+- **ZGC (Z Garbage Collector)**: Concurrent, scalable, ultra-low latency collector with sub-millisecond pause times for TB-scale heaps.`
   },
 
   // --- Spring Boot ---
@@ -669,10 +609,7 @@ public class CourseController {
         return ResponseEntity.ok(courseService.fetchPublishedCourses());
     }
 }
-\`\`\`
-
----
-*Created with care by Acin's LMS team.*`
+\`\`\``
   },
 
   // --- Java Collections ---
@@ -688,10 +625,7 @@ Java's \`HashMap\` is based on a hash table data structure with an array of \`No
 ### Key Mechanisms:
 1. **Hashing**: \`hash(key) = (h = key.hashCode()) ^ (h >>> 16)\`
 2. **Index Calculation**: \`index = (n - 1) & hash\`
-3. **Collision Resolution (Java 8+)**: Linked List converts to a **Red-Black Tree** (\`TreeNode\`) when bucket threshold exceeds 8 (\`TREEIFY_THRESHOLD\`), improving worst-case lookup from $O(N)$ to $O(\\log N)$.
-
----
-*Created with care by Acin's LMS team.*`
+3. **Collision Resolution (Java 8+)**: Linked List converts to a **Red-Black Tree** (\`TreeNode\`) when bucket threshold exceeds 8 (\`TREEIFY_THRESHOLD\`), improving worst-case lookup from $O(N)$ to $O(\\log N)$.`
   }
 ];
 

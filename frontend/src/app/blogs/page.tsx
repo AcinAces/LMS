@@ -126,7 +126,7 @@ export default async function BlogsPage() {
                       {topic.icon}
                     </div>
                     <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${topic.accentColor}`}>
-                      {count} {count === 1 ? 'Article' : 'Articles'}
+                      {count} {dict.blogs.articles_count_badge || (count === 1 ? 'Article' : 'Articles')}
                     </span>
                   </div>
                   

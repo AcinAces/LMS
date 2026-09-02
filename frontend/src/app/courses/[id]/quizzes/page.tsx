@@ -140,13 +140,13 @@ export default function CourseQuizzesPage() {
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between text-xs font-mono text-slate-400">
           <div className="flex items-center gap-2">
-            <Link href="/courses" className="hover:text-emerald-400 transition-colors">Courses</Link>
+            <Link href="/courses" className="hover:text-emerald-400 transition-colors">{t('footer.all_courses')}</Link>
             <span>/</span>
             <Link href={`/courses/${courseId}`} className="hover:text-emerald-400 transition-colors truncate max-w-[200px] sm:max-w-xs">
               {course?.title || 'Course'}
             </Link>
             <span>/</span>
-            <span className="text-emerald-400 font-bold">Quizzes</span>
+            <span className="text-emerald-400 font-bold">{t('course_detail.quizzes_label')}</span>
           </div>
           <Link 
             href={`/courses/${courseId}`} 
@@ -164,7 +164,7 @@ export default function CourseQuizzesPage() {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  Proctored Assessments
+                  {t('quiz.proctored_assessments')}
                 </span>
                 <span className="text-xs text-slate-400 font-mono">
                   {course?.title || 'Course'}
@@ -174,7 +174,7 @@ export default function CourseQuizzesPage() {
                 {t('quiz.available_quizzes')}
               </h1>
               <p className="text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
-                Test your mastery of the concepts covered in this curriculum. Assessments are monitored by our Proctored Guardian anti-cheat engine.
+                {t('quiz.quizzes_subtitle')}
               </p>
             </div>
 
@@ -182,11 +182,11 @@ export default function CourseQuizzesPage() {
             <div className="flex items-center gap-3">
               <div className="bg-slate-950/80 border border-white/10 rounded-2xl p-3.5 text-center min-w-[100px] shadow-inner">
                 <div className="text-2xl font-black text-emerald-400">{totalQuizzes}</div>
-                <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Total Quizzes</div>
+                <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">{t('quiz.total_quizzes_label')}</div>
               </div>
               <div className="bg-slate-950/80 border border-white/10 rounded-2xl p-3.5 text-center min-w-[100px] shadow-inner">
                 <div className="text-2xl font-black text-cyan-400">{completedQuizzes}</div>
-                <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Passed</div>
+                <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">{t('quiz.passed_label')}</div>
               </div>
             </div>
           </div>
@@ -204,7 +204,7 @@ export default function CourseQuizzesPage() {
                   {t('quiz.instructions_title')}
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed max-w-3xl">
-                  Fullscreen mode is strictly enforced. Tab switches, window minimization, and exiting fullscreen incur grade deductions. 3 violations terminate the exam with zero marks.
+                  {t('quiz.proctor_info_desc')}
                 </p>
               </div>
             </div>
@@ -231,7 +231,7 @@ export default function CourseQuizzesPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search quizzes by title or topic..."
+                placeholder={t('quiz.search_placeholder')}
                 className="w-full bg-slate-900/80 border border-white/10 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 transition-all shadow-inner"
               />
               {searchQuery && (
@@ -245,7 +245,7 @@ export default function CourseQuizzesPage() {
             </div>
 
             <span className="text-xs text-slate-400 font-mono self-end sm:self-center">
-              Showing {filteredQuizzes.length} of {totalQuizzes} quizzes
+              {t('quiz.showing_quizzes_count', { filtered: filteredQuizzes.length, total: totalQuizzes })}
             </span>
           </div>
         )}
@@ -257,12 +257,12 @@ export default function CourseQuizzesPage() {
               📝
             </div>
             <h3 className="text-lg font-bold text-white">
-              {searchQuery ? 'No matching quizzes found' : t('quiz.no_quizzes')}
+              {searchQuery ? t('quiz.no_matching') : t('quiz.no_quizzes')}
             </h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
               {searchQuery 
-                ? `No quizzes matched "${searchQuery}". Try a different keyword.` 
-                : 'This course does not have active quizzes published yet.'}
+                ? t('quiz.no_matching_desc', { query: searchQuery }) 
+                : t('quiz.no_quizzes')}
             </p>
           </div>
         ) : (
@@ -285,7 +285,7 @@ export default function CourseQuizzesPage() {
                     {/* Header Badges */}
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <span className="text-[11px] font-mono font-bold text-slate-400 bg-white/5 border border-white/5 px-2.5 py-1 rounded-xl">
-                        Assessment #{index + 1}
+                        {t('quiz.assessment_num', { index: index + 1 })}
                       </span>
                       
                       {hasAttempted ? (
@@ -295,7 +295,7 @@ export default function CourseQuizzesPage() {
                               ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' 
                               : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
                           }`}>
-                            {isPassed ? 'Passed ✓' : 'Attempted'}
+                            {isPassed ? `${t('quiz.passed')} ✓` : t('quiz.attempted')}
                           </span>
                           <span className="text-[11px] font-mono font-bold text-white bg-slate-950 px-2 py-0.5 rounded-lg border border-white/10">
                             {attemptHistory.bestPercentage}%
@@ -303,7 +303,7 @@ export default function CourseQuizzesPage() {
                         </div>
                       ) : (
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-800 text-slate-400 border border-white/5">
-                          Not Attempted
+                          {t('quiz.not_attempted')}
                         </span>
                       )}
                     </div>
@@ -376,7 +376,7 @@ export default function CourseQuizzesPage() {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-white tracking-tight">{t('quiz.confirm_title')}</h3>
-                <p className="text-xs text-amber-300/90 font-mono">Proctored Session Initialization</p>
+                <p className="text-xs text-amber-300/90 font-mono">{t('quiz.proctor_init_subtitle')}</p>
               </div>
             </div>
 
@@ -389,11 +389,11 @@ export default function CourseQuizzesPage() {
                     : (selectedQuiz.questionsCount ?? (selectedQuiz.totalQuestion || 0));
                   return (
                     <div className="flex items-center gap-4 text-xs font-mono text-slate-400">
-                      <span>⏱️ {selectedQuiz.timeLimit || 15} Mins</span>
+                      <span>⏱️ {selectedQuiz.timeLimit || 15} {t('quiz.minutes')}</span>
                       <span>•</span>
-                      <span>📝 {selQCount} Questions</span>
+                      <span>📝 {selQCount} {t('quiz.questions')}</span>
                       <span>•</span>
-                      <span>🎯 {selQCount} Max Marks</span>
+                      <span>🎯 {selQCount} {t('quiz.marks')}</span>
                     </div>
                   );
                 })()}
@@ -401,12 +401,12 @@ export default function CourseQuizzesPage() {
 
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 space-y-2 text-xs text-amber-200">
                 <p className="font-bold text-amber-300 flex items-center gap-1.5">
-                  <span>⚠️ Anti-Cheat Rules Checklist:</span>
+                  <span>⚠️ {t('quiz.anti_cheat_checklist')}</span>
                 </p>
                 <ul className="space-y-1.5 list-disc list-inside text-amber-200/90">
-                  <li>Your browser will enter Fullscreen mode upon starting.</li>
-                  <li>Do not switch tabs, minimize the window, or exit fullscreen.</li>
-                  <li>Accumulating 3 violations will auto-terminate the exam with 0 marks.</li>
+                  <li>{t('quiz.p_rule1')}</li>
+                  <li>{t('quiz.p_rule2')}</li>
+                  <li>{t('quiz.p_rule3')}</li>
                 </ul>
               </div>
             </div>

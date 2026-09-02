@@ -322,7 +322,7 @@ export default function LessonPage() {
 
           <div className="flex items-center gap-3 self-end sm:self-auto">
             <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs font-mono font-bold text-slate-300">
-              Lesson {currentIndex + 1} of {totalLessons}
+              {t('lesson.lesson_x_of_y', { current: currentIndex + 1, total: totalLessons })}
             </span>
             {progress?.completed && (
               <span className="px-3 py-1 bg-emerald-500/15 border border-emerald-500/30 rounded-full text-xs font-bold text-emerald-400 flex items-center gap-1.5 shadow-sm">
@@ -352,7 +352,7 @@ export default function LessonPage() {
                     {currentLesson.title}
                   </h1>
                   <p className="text-xs text-slate-400 font-mono mt-1 flex items-center gap-2">
-                    <span>🎬 Duration: {formatTime(currentLesson.durationInSeconds || 0)}</span>
+                    <span>🎬 {t('lesson.duration_label')} {formatTime(currentLesson.durationInSeconds || 0)}</span>
                     {isStaff && (
                       <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold">
                         Staff Inspection
@@ -405,7 +405,7 @@ export default function LessonPage() {
                       <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                       </svg>
-                      <span>{markingComplete ? 'Saving...' : 'Mark as Complete'}</span>
+                      <span>{markingComplete ? t('nav.saving') : t('lesson.mark_complete')}</span>
                     </button>
                   )}
 
@@ -421,7 +421,7 @@ export default function LessonPage() {
                       href={`/courses/${course.documentId}`}
                       className={`px-6 py-2.5 ${isStaff ? 'bg-white/10 hover:bg-white/20' : 'bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400'} text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2 cursor-pointer`}
                     >
-                      <span>{isStaff ? 'Back to Course ↑' : 'Finish Course 🎉'}</span>
+                      <span>{isStaff ? 'Back to Course ↑' : t('lesson.finish_course')}</span>
                     </Link>
                   )}
                 </div>
@@ -476,9 +476,9 @@ export default function LessonPage() {
               {/* Playlist Title */}
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-                  <span>Course Curriculum</span>
+                  <span>{t('lesson.course_curriculum')}</span>
                 </h3>
-                <span className="text-[11px] font-mono text-slate-500">{totalLessons} lessons</span>
+                <span className="text-[11px] font-mono text-slate-500">{totalLessons} {t('home.lessons')}</span>
               </div>
               
               {/* Lesson Items Scrollable Container */}
@@ -525,7 +525,7 @@ export default function LessonPage() {
                             {!isCompleted && maxWatched > 0 && (
                               <>
                                 <span>•</span>
-                                <span className="text-cyan-400">{Math.floor(timeRemaining / 60)}m left</span>
+                                <span className="text-cyan-400">{Math.floor(timeRemaining / 60)}m {t('course_detail.left')}</span>
                               </>
                             )}
                           </div>

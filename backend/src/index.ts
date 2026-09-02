@@ -68,7 +68,6 @@ export default {
       const roleService = strapi.plugin('users-permissions').service('role');
       const roles = await roleService.find();
       
-      // 1. Rename default Authenticated role to Student
       const authRole = roles.find((r: any) => r.type === 'authenticated');
       if (authRole && authRole.name !== 'Student') {
         await roleService.updateRole(authRole.id, {
@@ -79,7 +78,6 @@ export default {
         strapi.log.info('Updated default Authenticated role to Student');
       }
 
-      // 2. Create Instructor Role if missing
       const instructorRole = roles.find((r: any) => r.name === 'Instructor');
       if (!instructorRole) {
         await roleService.createRole({
@@ -90,7 +88,6 @@ export default {
         strapi.log.info('Created Instructor role');
       }
 
-      // 3. Create Content Manager Role if missing
       const cmRole = roles.find((r: any) => r.name === 'Content Manager');
       if (!cmRole) {
         await roleService.createRole({
@@ -101,12 +98,10 @@ export default {
         strapi.log.info('Created Content Manager role');
       }
 
-      // 4. Grant Lesson Chat, Progress, Quizzes, and Core API permissions to roles
       const allRoles = await roleService.find();
       for (const role of allRoles) {
         const roleId = role.id;
         
-        // Actions for all roles (including public & authenticated)
         const publicAndAuthActions = [
           'api::quiz.quiz.find',
           'api::quiz.quiz.findOne',

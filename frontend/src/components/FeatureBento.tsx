@@ -2,8 +2,11 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 export default function FeatureBento() {
+  const { t } = useLanguage();
+
   return (
     <section className="relative py-24 px-4 sm:px-6 lg:px-8 border-t border-white/5 bg-slate-950/80 overflow-hidden">
       {/* Background Ambient Glows */}
@@ -15,10 +18,10 @@ export default function FeatureBento() {
         {/* Section Header */}
         <div className="text-center space-y-4 max-w-3xl mx-auto animate-fade-in-up">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
-            Built for Modern Developers & Students
+            {t('bento.header_title')}
           </h2>
           <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
-            Everything you need to master data structures, build production applications, take anti-cheat examinations, and get direct author guidance.
+            {t('bento.header_subtitle')}
           </p>
         </div>
 
@@ -35,16 +38,16 @@ export default function FeatureBento() {
                   🛡️
                 </div>
                 <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  Proctoring V2
+                  {t('bento.card1_badge')}
                 </span>
               </div>
 
               <div>
                 <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight group-hover:text-emerald-300 transition-colors">
-                  AI Proctoring & Anti-Cheat Quizzes
+                  {t('bento.card1_title')}
                 </h3>
                 <p className="text-slate-400 text-xs sm:text-sm mt-2 leading-relaxed max-w-xl">
-                  Real-time exam security with automated fullscreen tracking, tab switch monitors, minimize penalty calculations, and instant auto-submit on strike threshold.
+                  {t('bento.card1_desc')}
                 </p>
               </div>
 
@@ -53,27 +56,27 @@ export default function FeatureBento() {
                 <div className="flex items-center justify-between text-slate-300">
                   <span className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Proctor Status: SECURE
+                    {t('bento.card1_status')}
                   </span>
-                  <span className="text-emerald-400 font-bold">0 / 3 Strikes</span>
+                  <span className="text-emerald-400 font-bold">{t('bento.card1_strikes')}</span>
                 </div>
                 <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
                   <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full w-full rounded-full transition-all" />
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-[11px] text-slate-400 text-center pt-1">
-                  <div className="bg-white/5 py-1.5 rounded-lg border border-white/5">Fullscreen: Locked</div>
-                  <div className="bg-white/5 py-1.5 rounded-lg border border-white/5">Tab Focus: Active</div>
-                  <div className="bg-white/5 py-1.5 rounded-lg border border-white/5">Timer Sync: Live</div>
+                  <div className="bg-white/5 py-1.5 rounded-lg border border-white/5">{t('bento.card1_fullscreen')}</div>
+                  <div className="bg-white/5 py-1.5 rounded-lg border border-white/5">{t('bento.card1_tab')}</div>
+                  <div className="bg-white/5 py-1.5 rounded-lg border border-white/5">{t('bento.card1_timer')}</div>
                 </div>
               </div>
             </div>
 
-            <div className="pt-6 relative z-10 flex items-center justify-between text-xs text-emerald-400 font-bold">
-              <span>Explore Exam Curriculum</span>
+            <Link href="/courses" className="pt-6 relative z-10 flex items-center justify-between text-xs text-emerald-400 font-bold group-hover:underline">
+              <span>{t('bento.card1_link')}</span>
               <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
-            </div>
+            </Link>
           </div>
 
           {/* Card 2: Interactive Web Monaco IDE */}
@@ -86,16 +89,16 @@ export default function FeatureBento() {
                   💻
                 </div>
                 <span className="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                  Monaco Engine
+                  {t('bento.card2_badge')}
                 </span>
               </div>
 
               <div>
                 <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight group-hover:text-cyan-300 transition-colors">
-                  In-Browser Code IDE
+                  {t('bento.card2_title')}
                 </h3>
                 <p className="text-slate-400 text-xs sm:text-sm mt-2 leading-relaxed">
-                  Write, debug, and test code in C++, Python, JavaScript, and Java with Monaco editor and instant server runtime output.
+                  {t('bento.card2_desc')}
                 </p>
               </div>
 
@@ -108,7 +111,7 @@ export default function FeatureBento() {
             </div>
 
             <Link href="/ide" className="pt-6 relative z-10 flex items-center justify-between text-xs text-cyan-400 font-bold group-hover:underline">
-              <span>Open Code Playground</span>
+              <span>{t('bento.card2_link')}</span>
               <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
@@ -125,36 +128,36 @@ export default function FeatureBento() {
                   💬
                 </div>
                 <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                  Direct Threads
+                  {t('bento.card3_badge')}
                 </span>
               </div>
 
               <div>
                 <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight group-hover:text-purple-300 transition-colors">
-                  1-to-1 Author Queries
+                  {t('bento.card3_title')}
                 </h3>
                 <p className="text-slate-400 text-xs sm:text-sm mt-2 leading-relaxed">
-                  Ask questions directly inside each lesson with private, isolated messaging threads strictly connecting you and the course author.
+                  {t('bento.card3_desc')}
                 </p>
               </div>
 
               {/* Chat bubble mock */}
               <div className="bg-slate-950/80 border border-white/10 rounded-2xl p-3 space-y-2 text-xs">
                 <div className="bg-emerald-500/15 text-emerald-300 p-2 rounded-xl text-[11px] rounded-br-none ml-auto max-w-[85%]">
-                  How does the Dijkstra priority queue handle visited nodes?
+                  {t('bento.card3_msg_student')}
                 </div>
                 <div className="bg-white/5 text-slate-300 p-2 rounded-xl text-[11px] rounded-bl-none mr-auto max-w-[85%]">
-                  It uses lazy deletion by checking if dist &gt; minDistance!
+                  {t('bento.card3_msg_author')}
                 </div>
               </div>
             </div>
 
-            <div className="pt-6 relative z-10 flex items-center justify-between text-xs text-purple-400 font-bold">
-              <span>Interactive Lesson Chats</span>
+            <Link href="/courses" className="pt-6 relative z-10 flex items-center justify-between text-xs text-purple-400 font-bold group-hover:underline">
+              <span>{t('chat.student_queries')}</span>
               <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
-            </div>
+            </Link>
           </div>
 
           {/* Card 4: Detailed Progress & Analytics Dashboard (Span 2 on desktop) */}
@@ -167,42 +170,42 @@ export default function FeatureBento() {
                   📊
                 </div>
                 <span className="px-3 py-1 rounded-full text-xs font-semibold bg-teal-500/10 text-teal-400 border border-teal-500/20">
-                  Granular KPIs
+                  {t('bento.card4_badge')}
                 </span>
               </div>
 
               <div>
                 <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight group-hover:text-teal-300 transition-colors">
-                  Live Learning Progress & Completion Metrics
+                  {t('bento.card4_title')}
                 </h3>
                 <p className="text-slate-400 text-xs sm:text-sm mt-2 leading-relaxed max-w-xl">
-                  Granular curriculum watch times, module completion badges, quiz attempt breakdowns, and progress tracking for students and instructors.
+                  {t('bento.card4_desc')}
                 </p>
               </div>
 
               {/* Progress metrics mock */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
                 <div className="bg-slate-950/80 border border-white/10 rounded-xl p-3 text-center">
-                  <div className="text-emerald-400 font-extrabold text-lg">94%</div>
-                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">Completion</div>
+                  <div className="text-emerald-400 font-extrabold text-lg">100%</div>
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">{t('progress.completed_count')}</div>
                 </div>
                 <div className="bg-slate-950/80 border border-white/10 rounded-xl p-3 text-center">
-                  <div className="text-cyan-400 font-extrabold text-lg">18 / 20</div>
-                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">Lessons</div>
+                  <div className="text-cyan-400 font-extrabold text-lg">20 / 20</div>
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">{t('dashboard.lessons_label')}</div>
                 </div>
                 <div className="bg-slate-950/80 border border-white/10 rounded-xl p-3 text-center">
-                  <div className="text-purple-400 font-extrabold text-lg">92.5%</div>
-                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">Avg Score</div>
+                  <div className="text-purple-400 font-extrabold text-lg">95%</div>
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">{t('progress.kpi_quiz_score')}</div>
                 </div>
                 <div className="bg-slate-950/80 border border-white/10 rounded-xl p-3 text-center">
-                  <div className="text-amber-400 font-extrabold text-lg">Active</div>
-                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">Streak</div>
+                  <div className="text-amber-400 font-extrabold text-lg">{t('quiz.clean_record')}</div>
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">{t('quiz.violations')}</div>
                 </div>
               </div>
             </div>
 
             <Link href="/courses" className="pt-6 relative z-10 flex items-center justify-between text-xs text-teal-400 font-bold group-hover:underline">
-              <span>Start Tracking Progress</span>
+              <span>{t('progress.my_progress')}</span>
               <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>

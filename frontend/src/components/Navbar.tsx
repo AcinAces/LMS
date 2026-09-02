@@ -9,8 +9,8 @@ import { useEffect, useState, useRef } from 'react';
 import PasswordRequirementsList from './PasswordRequirementsList';
 import { checkPasswordRequirements } from '@/utils/password';
 
-function timeAgo(dateParam: string | Date) {
-  if (!dateParam) return '';
+function timeAgo(dateParam: string | Date, isBn: boolean = false) {
+  if (!dateParam) return null;
   const date = typeof dateParam === 'object' ? dateParam : new Date(dateParam);
   const today = new Date();
   const seconds = Math.round((today.getTime() - date.getTime()) / 1000);
@@ -21,7 +21,18 @@ function timeAgo(dateParam: string | Date) {
   const months = Math.round(days / 30);
   const years = Math.round(days / 365);
 
-  if (seconds < 60) return `${seconds < 0 ? 0 : seconds} seconds ago`;
+  const sec = seconds < 0 ? 0 : seconds;
+  if (isBn) {
+    if (seconds < 60) return `${sec} সেকেন্ড আগে`;
+    if (minutes < 60) return `${minutes} মিনিট আগে`;
+    if (hours < 24) return `${hours} ঘণ্টা আগে`;
+    if (days < 7) return `${days} দিন আগে`;
+    if (weeks < 4) return `${weeks} সপ্তাহ আগে`;
+    if (months < 12) return `${months} মাস আগে`;
+    return `${years} বছর আগে`;
+  }
+
+  if (seconds < 60) return `${sec} seconds ago`;
   else if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
   else if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
   else if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
@@ -31,7 +42,7 @@ function timeAgo(dateParam: string | Date) {
 }
 
 export default function Navbar() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
   const studentDropdownRef = useRef<HTMLDivElement>(null);
   
@@ -549,7 +560,7 @@ export default function Navbar() {
                                     <svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <span>{timeAgo(notif.createdAt)}</span>
+                                    <span>{timeAgo(notif.createdAt, locale === 'bn')}</span>
                                   </div>
                                 </div>
                                 <div className="text-slate-500 group-hover:text-white group-hover:translate-x-0.5 transition-all text-xs font-bold shrink-0 self-center">

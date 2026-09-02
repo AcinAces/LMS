@@ -6,8 +6,6 @@ export default factories.createCoreController('api::lesson-progress.lesson-progr
     const user = ctx.state.user;
     if (!user) return ctx.unauthorized();
 
-    // Use Document Service directly to bypass REST API validation
-    // because Strapi rejects filtering on 'student' relation via REST
     const query = ctx.query || {};
     
     // We construct a query for the document service
@@ -24,7 +22,6 @@ export default factories.createCoreController('api::lesson-progress.lesson-progr
     return { data: sanitized, meta: { pagination: { total: sanitized.length } } };
   },
 
-  // Custom endpoint to safely sync progress without REST permission nightmares
   async sync(ctx) {
     const user = ctx.state.user;
     if (!user) return ctx.unauthorized('You must be logged in.');

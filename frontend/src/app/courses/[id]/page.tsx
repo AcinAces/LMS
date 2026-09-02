@@ -303,23 +303,23 @@ export default function CourseDetailsPage() {
               {/* Course Meta Pills */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
                 <div className="bg-slate-950/60 border border-white/5 rounded-2xl p-3 text-center">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Lessons</p>
-                  <p className="text-lg font-black text-white mt-0.5">{course.lessons?.length || 0} Lessons</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t('course_detail.total_lessons_label')}</p>
+                  <p className="text-lg font-black text-white mt-0.5">{t('course_detail.total_lessons_count', { count: course.lessons?.length || 0 })}</p>
                 </div>
                 <div className="bg-slate-950/60 border border-white/5 rounded-2xl p-3 text-center">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Duration</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t('course_detail.duration_label')}</p>
                   <p className="text-lg font-black text-cyan-400 mt-0.5">{formatTotalDuration(course.lessons)}</p>
                 </div>
                 <div className="bg-slate-950/60 border border-white/5 rounded-2xl p-3 text-center col-span-2 sm:col-span-1">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Quizzes</p>
-                  <p className="text-lg font-black text-purple-400 mt-0.5">{totalQuizzes} Exams</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t('course_detail.quizzes_label')}</p>
+                  <p className="text-lg font-black text-purple-400 mt-0.5">{t('course_detail.quizzes_count', { count: totalQuizzes })}</p>
                 </div>
               </div>
 
               {/* Description Markdown */}
               {course.courseDescription && (
                 <div className="pt-4 border-t border-white/10">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2">About this curriculum</h3>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2">{t('course_detail.about_curriculum')}</h3>
                   <div className="prose prose-invert prose-emerald max-w-none text-xs sm:text-sm text-slate-300 leading-relaxed">
                     <ReactMarkdown>{course.courseDescription}</ReactMarkdown>
                   </div>
@@ -332,7 +332,7 @@ export default function CourseDetailsPage() {
           <div className="space-y-6">
             <div className="bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-6 sticky top-24">
               <h3 className="text-lg font-bold text-white tracking-tight">
-                <span>Access</span>
+                <span>{t('course_detail.access_title')}</span>
               </h3>
 
               {!isPublic ? (
@@ -371,7 +371,7 @@ export default function CourseDetailsPage() {
                       {/* Progress Bar */}
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-[11px] text-slate-400 font-mono">
-                          <span>{progressMetrics.completedCount} of {progressMetrics.totalCount} completed</span>
+                          <span>{t('course_detail.completed_progress', { completed: progressMetrics.completedCount, total: progressMetrics.totalCount })}</span>
                         </div>
                         <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-white/5">
                           <div 
@@ -387,7 +387,7 @@ export default function CourseDetailsPage() {
                           onClick={() => router.push(`/courses/${course.documentId}/lesson/${progressMetrics.nextLessonDocId}`)}
                           className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold rounded-2xl shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
                         >
-                          <span>{progressMetrics.isAllCompleted ? 'Review Lessons' : 'Continue Learning'}</span>
+                          <span>{progressMetrics.isAllCompleted ? t('course_detail.review_lessons_btn') : t('course_detail.continue_learning_btn')}</span>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                           </svg>
@@ -412,7 +412,7 @@ export default function CourseDetailsPage() {
                   ) : (
                     <div className="space-y-4">
                       <p className="text-xs text-slate-400 leading-relaxed">
-                        Enroll in this curriculum to access all video lectures, interactive tasks, and anti-cheat evaluations.
+                        {t('course_detail.enroll_desc')}
                       </p>
                       <button 
                         onClick={handleEnroll} 
@@ -461,10 +461,10 @@ export default function CourseDetailsPage() {
           <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <div>
               <h2 className="text-2xl font-bold text-white tracking-tight">{t('course_detail.course_lessons')}</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Structured learning curriculum with interactive exercises</p>
+              <p className="text-xs text-slate-400 mt-0.5">{t('course_detail.structured_curriculum')}</p>
             </div>
             <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-white/5 border border-white/10 text-slate-400">
-              {course.lessons?.length || 0} Lessons
+              {t('course_detail.total_lessons_count', { count: course.lessons?.length || 0 })}
             </span>
           </div>
 

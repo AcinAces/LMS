@@ -20,11 +20,11 @@ async function getBlog(documentId: string) {
   }
 }
 
-function estimateReadingTime(text?: string) {
-  if (!text) return '3 min read';
+function estimateReadingTime(text?: string, locale: Locale = 'bn') {
+  if (!text) return locale === 'bn' ? '৩ মিনিট পড়ার সময়' : '3 min read';
   const words = text.trim().split(/\s+/).length;
   const minutes = Math.max(1, Math.ceil(words / 200));
-  return `${minutes} min read`;
+  return `${minutes} ${locale === 'bn' ? 'মিনিট পড়ার সময়' : 'min read'}`;
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ topic: string, documentId: string }> }) {
@@ -66,7 +66,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ topic
   const updatedDate = blog.updatedAt 
     ? new Date(blog.updatedAt).toLocaleDateString(locale === 'bn' ? 'bn-BD' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) 
     : new Date().toLocaleDateString();
-  const readTime = estimateReadingTime(blog.body);
+  const readTime = estimateReadingTime(blog.body, locale);
   
   return (
     <div className="relative min-h-[calc(100vh-4rem)] pt-16 pb-32">
@@ -121,7 +121,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ topic
                 </div>
                 <div>
                   <p className="font-bold text-slate-200 leading-none">{authorName}</p>
-                  <p className="text-[11px] text-emerald-400/90 mt-1">Official Learning Material</p>
                 </div>
               </div>
 
@@ -183,7 +182,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ topic
                   )
                 }}
               >
-                {blog.body}
+                {blog.body.replace(/(?:---\s*)?\*?Created with care by Acin['’]s LMS team\.?\*?/gi, '').trim()}
               </ReactMarkdown>
             ) : (
               <div className="text-center italic text-slate-500 py-10">

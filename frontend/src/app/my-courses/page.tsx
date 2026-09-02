@@ -213,7 +213,7 @@ export default function MyCoursesPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    Student Learning Hub
+                    {t('dashboard.student_hub')}
                   </span>
                   <span className="text-xs text-slate-400 font-mono">
                     {currentUser?.username ? `@${currentUser.username}` : 'Enrolled Student'}
@@ -223,7 +223,7 @@ export default function MyCoursesPage() {
                   {t('dashboard.my_courses')}
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-400 max-w-xl">
-                  Track your active curricula, resume ongoing lessons, and complete interactive programming exams.
+                  {t('dashboard.subtitle')}
                 </p>
               </div>
             </div>
@@ -243,19 +243,19 @@ export default function MyCoursesPage() {
           {!loading && courses.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8 pt-6 border-t border-white/10 relative z-10">
               <div className="bg-slate-950/60 border border-white/5 rounded-2xl p-4">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Enrolled</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('dashboard.total_enrolled')}</p>
                 <p className="text-2xl font-black text-white mt-1">{overallStats.totalEnrolled}</p>
               </div>
               <div className="bg-slate-950/60 border border-white/5 rounded-2xl p-4">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-cyan-400">In Progress</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-cyan-400">{t('dashboard.in_progress')}</p>
                 <p className="text-2xl font-black text-cyan-400 mt-1">{overallStats.inProgressCourses}</p>
               </div>
               <div className="bg-slate-950/60 border border-white/5 rounded-2xl p-4">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Completed</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">{t('dashboard.completed_count')}</p>
                 <p className="text-2xl font-black text-emerald-400 mt-1">{overallStats.completedCourses}</p>
               </div>
               <div className="bg-slate-950/60 border border-white/5 rounded-2xl p-4">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-purple-400">Overall Progress</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-purple-400">{t('dashboard.overall_progress')}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-2xl font-black text-purple-400">{overallStats.overallPercentage}%</span>
                   <div className="flex-1 bg-white/10 rounded-full h-1.5 overflow-hidden">
@@ -284,7 +284,7 @@ export default function MyCoursesPage() {
                     : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
                 }`}
               >
-                All Courses ({courses.length})
+                {t('dashboard.all_tab_count', { count: courses.length })}
               </button>
               <button
                 onClick={() => setStatusFilter('in_progress')}
@@ -294,7 +294,7 @@ export default function MyCoursesPage() {
                     : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
                 }`}
               >
-                In Progress ({overallStats.inProgressCourses})
+                {t('dashboard.in_progress_tab_count', { count: overallStats.inProgressCourses })}
               </button>
               <button
                 onClick={() => setStatusFilter('completed')}
@@ -304,7 +304,7 @@ export default function MyCoursesPage() {
                     : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
                 }`}
               >
-                Completed ({overallStats.completedCourses})
+                {t('dashboard.completed_tab_count', { count: overallStats.completedCourses })}
               </button>
             </div>
 
@@ -338,7 +338,7 @@ export default function MyCoursesPage() {
           {/* Dynamic Tags Filter Carousel */}
           {allTags.length > 0 && (
             <div className="flex items-center gap-2 pt-2 overflow-x-auto pb-1 text-xs custom-scrollbar">
-              <span className="text-slate-400 font-bold shrink-0">Tags:</span>
+              <span className="text-slate-400 font-bold shrink-0">{t('courses.tags_label')}</span>
               <button
                 onClick={() => setSelectedTag('all')}
                 className={`px-3 py-1 rounded-xl font-semibold transition-all shrink-0 cursor-pointer ${
@@ -347,7 +347,7 @@ export default function MyCoursesPage() {
                     : 'bg-white/5 text-slate-400 hover:text-slate-200 border border-white/5'
                 }`}
               >
-                All
+                {t('dashboard.all_tag')}
               </button>
               {allTags.map(tag => (
                 <button
@@ -386,12 +386,12 @@ export default function MyCoursesPage() {
             </div>
             <h3 className="text-xl font-bold text-white tracking-tight">
               {searchQuery || selectedTag !== 'all' || statusFilter !== 'all' 
-                ? 'No matching enrolled courses' 
+                ? t('dashboard.no_matching_enrolled')
                 : t("dashboard.not_enrolled")}
             </h3>
             <p className="text-xs sm:text-sm text-slate-400 max-w-sm mx-auto leading-relaxed">
               {searchQuery || selectedTag !== 'all' || statusFilter !== 'all'
-                ? 'Try adjusting your search keywords or switching filter categories.'
+                ? t('dashboard.adjust_filters_hint')
                 : 'Explore our catalog of programming curricula, hands-on labs, and competitive contests.'}
             </p>
             <div className="pt-2">
@@ -442,7 +442,7 @@ export default function MyCoursesPage() {
                         </span>
                       ) : (
                         <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
-                          {prog.percentage}% Done
+                          {t('dashboard.percent_done', { percent: prog.percentage })}
                         </span>
                       )}
                     </div>
@@ -468,7 +468,7 @@ export default function MyCoursesPage() {
                     {/* Progress Bar Component */}
                     <div className="space-y-2 pt-2">
                       <div className="flex justify-between items-center text-[11px] text-slate-400 font-mono">
-                        <span>{prog.completed} of {prog.total} lessons</span>
+                        <span>{t('dashboard.lessons_progress_count', { completed: prog.completed, total: prog.total })}</span>
                         <span className="font-bold text-white">{prog.percentage}%</span>
                       </div>
                       <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-white/5">
@@ -495,7 +495,7 @@ export default function MyCoursesPage() {
                           </button>
                         ) : (
                           <div className="flex items-center gap-1 text-xs text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">
-                            <span>Rated:</span>
+                            <span>{t('dashboard.rated_label')}</span>
                             <strong className="text-emerald-400 font-mono">{Number(userReview.overallRating).toFixed(1)}/5 ⭐</strong>
                           </div>
                         )}
@@ -509,7 +509,7 @@ export default function MyCoursesPage() {
                       href={prog.nextLessonDocId ? `/courses/${course.documentId}/lesson/${prog.nextLessonDocId}` : `/courses/${course.documentId}`}
                       className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold rounded-2xl shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
                     >
-                      <span>{prog.isCompleted ? 'Review Course' : 'Continue Learning'}</span>
+                      <span>{prog.isCompleted ? t('dashboard.review_course_btn') : t('dashboard.continue_learning_btn')}</span>
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                       </svg>

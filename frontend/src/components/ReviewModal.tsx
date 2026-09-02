@@ -101,12 +101,12 @@ export default function ReviewModal({ courseId, courseTitle, onClose, onSuccess 
 
   const getScoreLabel = (score: number) => {
     switch (score) {
-      case 5: return '⭐ 5 - Excellent';
-      case 4: return '⭐ 4 - Very Good';
-      case 3: return '⭐ 3 - Satisfactory';
-      case 2: return '⭐ 2 - Needs Improvement';
-      case 1: return '⭐ 1 - Poor';
-      default: return 'Select rating';
+      case 5: return t('review.excellent');
+      case 4: return t('review.very_good');
+      case 3: return t('review.satisfactory');
+      case 2: return t('review.needs_improvement');
+      case 1: return t('review.poor');
+      default: return t('review.select_rating');
     }
   };
 
@@ -132,7 +132,7 @@ export default function ReviewModal({ courseId, courseTitle, onClose, onSuccess 
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-300">{label}</span>
           <span className="text-xs font-mono font-semibold text-amber-400">
-            {activeVal > 0 ? getScoreLabel(activeVal) : 'Required *'}
+            {activeVal > 0 ? getScoreLabel(activeVal) : t('review.required_star')}
           </span>
         </div>
 
@@ -179,6 +179,15 @@ export default function ReviewModal({ courseId, courseTitle, onClose, onSuccess 
     );
   }
 
+  const localizedQuickTags = [
+    t('review.tag_clear_explanations'),
+    t('review.tag_challenging_problems'),
+    t('review.tag_great_code_examples'),
+    t('review.tag_well_structured'),
+    t('review.tag_beginner_friendly'),
+    t('review.tag_top_tier_exercises'),
+  ];
+
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xl animate-fade-in"
@@ -205,11 +214,11 @@ export default function ReviewModal({ courseId, courseTitle, onClose, onSuccess 
         <div className="mb-6 relative z-10 space-y-1">
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-              ⭐ Course Review
+              {t('review.course_review_badge')}
             </span>
             {parseFloat(overallScore) > 0 && (
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                Score: {overallScore} / 5.0
+                {t('quiz.score_label')}: {overallScore} / 5.0
               </span>
             )}
           </div>
@@ -257,7 +266,7 @@ export default function ReviewModal({ courseId, courseTitle, onClose, onSuccess 
           {/* Quick Feedback Chips */}
           <div className="pt-1">
             <div className="flex flex-wrap gap-1.5">
-              {quickTags.map((tag) => (
+              {localizedQuickTags.map((tag) => (
                 <button
                   key={tag}
                   type="button"

@@ -503,7 +503,7 @@ export default function QuizTakingPage() {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10">
               <div className="space-y-3 max-w-lg">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold font-mono bg-white/5 border border-white/10 text-slate-300">
-                  <span>{isPassed ? '🎉 Assessment Passed' : '📚 Needs Practice'}</span>
+                  <span>{isPassed ? t('quiz.assessment_passed') : t('quiz.needs_practice')}</span>
                   <span>•</span>
                   <span>{quiz.quizTitle}</span>
                 </div>
@@ -514,8 +514,8 @@ export default function QuizTakingPage() {
                 
                 <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
                   {isPassed 
-                    ? 'Congratulations on demonstrating strong competency in this subject! Review your questions below or proceed to the next chapter.' 
-                    : 'You did not achieve the 60% threshold on this attempt. Review the detailed solutions below and retry when ready.'}
+                    ? t('quiz.congrats_desc') 
+                    : t('quiz.retry_desc')}
                 </p>
               </div>
 
@@ -538,7 +538,7 @@ export default function QuizTakingPage() {
                 </svg>
                 <div className="absolute flex flex-col items-center justify-center text-center">
                   <span className="text-3xl font-black text-white tracking-tight">{percentage}%</span>
-                  <span className="text-[10px] font-mono uppercase text-slate-400">Score</span>
+                  <span className="text-[10px] font-mono uppercase text-slate-400">{t('quiz.score_label')}</span>
                 </div>
               </div>
             </div>
@@ -609,7 +609,7 @@ export default function QuizTakingPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-xl font-bold text-white">{t('quiz.review_answers')}</h3>
-                <p className="text-xs text-slate-400">Detailed breakdown of each question, your chosen option, and the correct answers.</p>
+                <p className="text-xs text-slate-400">{t('quiz.review_solutions_desc')}</p>
               </div>
 
               {/* Filter Tabs */}
@@ -664,13 +664,13 @@ export default function QuizTakingPage() {
                         }`}>
                           {isCorrect ? '✓' : '✗'}
                         </span>
-                        <span className="text-xs font-mono font-bold text-slate-400">Question {idx + 1}</span>
+                        <span className="text-xs font-mono font-bold text-slate-400">{t('quiz.question')} {idx + 1}</span>
                       </div>
 
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
                         isCorrect ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                       }`}>
-                        {isCorrect ? '+1 Mark' : '0 Marks'}
+                        {isCorrect ? t('quiz.plus_mark') : t('quiz.zero_marks')}
                       </span>
                     </div>
 
@@ -712,12 +712,12 @@ export default function QuizTakingPage() {
                             <div className="flex items-center gap-2 font-mono text-[11px] shrink-0">
                               {isSelected && (
                                 <span className="px-2 py-0.5 rounded-md bg-white/10 text-slate-300">
-                                  Your Choice
+                                  {t('quiz.your_answer').replace(':', '')}
                                 </span>
                               )}
                               {isThisCorrect && (
                                 <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 font-bold">
-                                  Correct ✓
+                                  {t('quiz.correct_answer').replace(':', '')} ✓
                                 </span>
                               )}
                             </div>

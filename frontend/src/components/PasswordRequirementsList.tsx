@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { checkPasswordRequirements } from '@/utils/password';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface PasswordRequirementsListProps {
   password: string;
@@ -14,6 +15,7 @@ export default function PasswordRequirementsList({
   className = '',
   showAlways = false,
 }: PasswordRequirementsListProps) {
+  const { t } = useLanguage();
   const reqs = checkPasswordRequirements(password);
   const hasTyped = (password || '').length > 0;
 
@@ -38,12 +40,12 @@ export default function PasswordRequirementsList({
 
   const strengthText = 
     satisfiedCount === 4 
-      ? 'Strong Password' 
+      ? t('password_reqs.strong') 
       : satisfiedCount === 3 
-        ? 'Good' 
+        ? t('password_reqs.good') 
         : satisfiedCount >= 1 
-          ? 'Weak' 
-          : 'Required';
+          ? t('password_reqs.weak') 
+          : t('password_reqs.required');
 
   return (
     <div className={`p-3.5 bg-slate-950/70 border border-white/10 rounded-2xl space-y-2.5 backdrop-blur-md transition-all ${className}`}>
@@ -51,11 +53,11 @@ export default function PasswordRequirementsList({
       {/* Strength Bar */}
       <div className="space-y-1">
         <div className="flex items-center justify-between text-[11px] font-mono">
-          <span className="text-slate-400">Password Requirements</span>
+          <span className="text-slate-400">{t('password_reqs.title')}</span>
           <span className={`font-bold ${
             satisfiedCount === 4 ? 'text-emerald-400' : satisfiedCount >= 2 ? 'text-amber-400' : 'text-rose-400'
           }`}>
-            {satisfiedCount} / 4 fulfilled ({strengthText})
+            {t('password_reqs.fulfilled_summary', { count: satisfiedCount, strength: strengthText })}
           </span>
         </div>
 
@@ -77,7 +79,7 @@ export default function PasswordRequirementsList({
           }`}>
             {reqs.minLength ? '✓' : '•'}
           </span>
-          <span className="text-[11px]">Min. 12 characters</span>
+          <span className="text-[11px]">{t('password_reqs.min_length')}</span>
         </div>
 
         {/* Sign / Special Character */}
@@ -87,7 +89,7 @@ export default function PasswordRequirementsList({
           }`}>
             {reqs.hasSpecialChar ? '✓' : '•'}
           </span>
-          <span className="text-[11px]">1 sign/symbol (!@#$...)</span>
+          <span className="text-[11px]">{t('password_reqs.has_sign')}</span>
         </div>
 
         {/* Uppercase */}
@@ -97,7 +99,7 @@ export default function PasswordRequirementsList({
           }`}>
             {reqs.hasUppercase ? '✓' : '•'}
           </span>
-          <span className="text-[11px]">1 uppercase letter (A-Z)</span>
+          <span className="text-[11px]">{t('password_reqs.has_uppercase')}</span>
         </div>
 
         {/* Lowercase */}
@@ -107,7 +109,7 @@ export default function PasswordRequirementsList({
           }`}>
             {reqs.hasLowercase ? '✓' : '•'}
           </span>
-          <span className="text-[11px]">1 lowercase letter (a-z)</span>
+          <span className="text-[11px]">{t('password_reqs.has_lowercase')}</span>
         </div>
 
       </div>

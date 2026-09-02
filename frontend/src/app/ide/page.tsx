@@ -302,14 +302,14 @@ export default function IDEPage() {
                     onClick={handleCopyOutput}
                     className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1"
                   >
-                    {copiedOutput ? 'Copied' : 'Copy'}
+                    {copiedOutput ? t('ide.copied') : t('ide.copy')}
                   </button>
                 )}
                 <button
                   onClick={() => setOutput(null)}
                   className="text-[11px] text-slate-500 hover:text-slate-300"
                 >
-                  Clear
+                  {t('ide.clear')}
                 </button>
               </div>
             )}
@@ -319,7 +319,7 @@ export default function IDEPage() {
                 onClick={() => setStdin('')}
                 className="text-[11px] text-slate-500 hover:text-slate-300"
               >
-                Clear
+                {t('ide.clear')}
               </button>
             )}
           </div>
@@ -330,7 +330,7 @@ export default function IDEPage() {
             {activeTab === 'input' ? (
               <div className="flex-1 flex flex-col space-y-2">
                 <p className="text-[11px] text-slate-400">
-                  Provide custom input data passed to <code className="text-cyan-400">stdin</code> during execution:
+                  {t('ide.custom_input_desc')}
                 </p>
                 <textarea
                   value={stdin}
@@ -344,7 +344,7 @@ export default function IDEPage() {
                 {isExecuting ? (
                   <div className="flex flex-col items-center justify-center py-16 space-y-3 text-slate-400">
                     <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                    <span className="text-xs font-semibold">Compiling & Executing Code...</span>
+                    <span className="text-xs font-semibold">{t('ide.compiling')}</span>
                   </div>
                 ) : !output ? (
                   <div className="flex flex-col items-center justify-center py-16 text-slate-500 space-y-2 text-center">
@@ -353,13 +353,13 @@ export default function IDEPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <p className="text-xs">{t('ide.placeholder_output')}</p>
-                    <p className="text-[11px] text-slate-600">Press Run or Ctrl+Enter to execute</p>
+                    <p className="text-[11px] text-slate-600">{t('ide.press_run_hint')}</p>
                   </div>
                 ) : output.error ? (
                   <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-400 space-y-2">
                     <div className="flex items-center gap-2 font-bold text-xs">
                       <span className="w-2 h-2 rounded-full bg-rose-500" />
-                      <span>Execution Error</span>
+                      <span>{t('ide.execution_error')}</span>
                     </div>
                     <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">
                       {output.error}
@@ -383,13 +383,13 @@ export default function IDEPage() {
                       <div className="flex items-center gap-3 text-[11px] text-slate-400">
                         {output.cpuTime && (
                           <span className="flex items-center gap-1">
-                            <span className="text-slate-500">Time:</span>
+                            <span className="text-slate-500">{t('ide.time_label')}</span>
                             <strong className="text-slate-300 font-mono">{output.cpuTime}s</strong>
                           </span>
                         )}
                         {output.memory && (
                           <span className="flex items-center gap-1">
-                            <span className="text-slate-500">Mem:</span>
+                            <span className="text-slate-500">{t('ide.mem_label')}</span>
                             <strong className="text-slate-300 font-mono">{output.memory} KB</strong>
                           </span>
                         )}
@@ -401,7 +401,7 @@ export default function IDEPage() {
                       <pre className={`text-xs whitespace-pre-wrap leading-relaxed font-mono ${
                         output.statusCode === 200 ? 'text-emerald-300' : 'text-amber-300'
                       }`}>
-                        {output.output || '<No standard output produced>'}
+                        {output.output || t('ide.no_output')}
                       </pre>
                     </div>
                   </div>
@@ -419,14 +419,14 @@ export default function IDEPage() {
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5 text-emerald-400">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>JDoodle Engine Ready</span>
+            <span>{t('ide.engine_ready')}</span>
           </span>
           <span className="hidden sm:inline">UTF-8</span>
           <span className="hidden md:inline">{selectedLang.name}</span>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="hidden sm:inline">Shortcut: <strong className="text-slate-400">Ctrl + Enter</strong></span>
+          <span className="hidden sm:inline">{t('ide.shortcut_hint')}</span>
         </div>
       </footer>
     </div>

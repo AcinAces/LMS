@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface Question {
   id: number;
@@ -10,6 +11,7 @@ interface Question {
   options: string[];
   correctIndex: number;
   explanation: string;
+  explanationBn?: string;
 }
 
 const QUESTIONS: Question[] = [
@@ -20,7 +22,8 @@ const QUESTIONS: Question[] = [
     code: `console.log(typeof NaN);`,
     options: ['"number"', '"NaN"', '"undefined"', '"object"'],
     correctIndex: 0,
-    explanation: 'In JavaScript, NaN (Not-a-Number) is technically a numeric data type!'
+    explanation: 'In JavaScript, NaN (Not-a-Number) is technically a numeric data type!',
+    explanationBn: 'জাভাস্ক্রিপ্টে NaN (Not-a-Number) মূলত একটি সাংখ্যিক (numeric) ডাটা টাইপ!'
   },
   {
     id: 2,
@@ -29,7 +32,8 @@ const QUESTIONS: Question[] = [
     code: `nums = [1, 2, 3]\nprint(nums * 2)`,
     options: ['[2, 4, 6]', '[1, 2, 3, 1, 2, 3]', '[1, 2, 3, 2]', 'TypeError'],
     correctIndex: 1,
-    explanation: 'Multiplying a Python list by an integer repeats the sequence.'
+    explanation: 'Multiplying a Python list by an integer repeats the sequence.',
+    explanationBn: 'পাইথন লিস্টকে ইন্টিজার দিয়ে গুণ করলে উপাদানগুলো পুনরাবৃত্তি হয়।'
   },
   {
     id: 3,
@@ -38,7 +42,8 @@ const QUESTIONS: Question[] = [
     code: `int a = 7;\nint b = 2;\nstd::cout << a / b;`,
     options: ['3.5', '3', '4', '3.0'],
     correctIndex: 1,
-    explanation: 'Integer division in C++ truncates the fractional part towards zero.'
+    explanation: 'Integer division in C++ truncates the fractional part towards zero.',
+    explanationBn: 'C++ এ ইন্টিজার ভাগাভাগিতে দশমিক অংশ বাদ দিয়ে পূর্ণসংখ্যা নেওয়া হয়।'
   },
   {
     id: 4,
@@ -47,7 +52,8 @@ const QUESTIONS: Question[] = [
     code: `// Time complexity of Binary Search on sorted array:\n// Best case: O(1)\n// Worst case: ?`,
     options: ['O(log N)', 'O(N)', 'O(N log N)', 'O(1)'],
     correctIndex: 0,
-    explanation: 'Binary Search halves the search space in each step, taking O(log N) time.'
+    explanation: 'Binary Search halves the search space in each step, taking O(log N) time.',
+    explanationBn: 'বাইনারি সার্চ প্রতি ধাপে অর্ধেক উপাদান বাদ দেয়, তাই এর সময় লাগে O(log N)।'
   },
   {
     id: 5,
@@ -56,7 +62,8 @@ const QUESTIONS: Question[] = [
     code: `x = [1, 2, 3]\ny = x\ny.append(4)\nprint(len(x))`,
     options: ['3', '4', '1', 'None'],
     correctIndex: 1,
-    explanation: 'Lists are reference types in Python, so modifying y modifies x.'
+    explanation: 'Lists are reference types in Python, so modifying y modifies x.',
+    explanationBn: 'পাইথনে লিস্ট রেফারেন্স টাইপ, তাই y পরিবর্তন করলে x-ও পরিবর্তিত হয়।'
   },
   {
     id: 6,
@@ -65,11 +72,13 @@ const QUESTIONS: Question[] = [
     code: `const a = [1, 2] + [3, 4];\nconsole.log(typeof a);`,
     options: ['"object"', '"string"', '"array"', '"NaN"'],
     correctIndex: 1,
-    explanation: 'The + operator converts both arrays to strings and concatenates them ("1,23,4").'
+    explanation: 'The + operator converts both arrays to strings and concatenates them ("1,23,4").',
+    explanationBn: '+ অপারেটর উভয় অ্যারে-কে স্ট্রিংয়ে রূপান্তর করে যুক্ত করে ("1,23,4")।'
   }
 ];
 
 export default function MiniCodingGame() {
+  const { t, locale } = useLanguage();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedOpt, setSelectedOpt] = useState<number | null>(null);
   const [score, setScore] = useState(0);
@@ -103,10 +112,10 @@ export default function MiniCodingGame() {
   };
 
   const getRank = (sc: number) => {
-    if (sc >= 50) return { title: '🧙 10x Architect', color: 'text-amber-400' };
-    if (sc >= 30) return { title: '🚀 Senior Dev', color: 'text-purple-400' };
-    if (sc >= 10) return { title: '⚡ Junior Coder', color: 'text-emerald-400' };
-    return { title: '🌱 Rookie Dev', color: 'text-slate-400' };
+    if (sc >= 50) return { title: `🧙 ${t('game.rank_wizard')}`, color: 'text-amber-400' };
+    if (sc >= 30) return { title: `🚀 ${t('game.rank_pro')}`, color: 'text-purple-400' };
+    if (sc >= 10) return { title: `⚡ ${t('game.rank_coder')}`, color: 'text-emerald-400' };
+    return { title: `🌱 ${t('game.rank_novice')}`, color: 'text-slate-400' };
   };
 
   const rank = getRank(score);
@@ -126,9 +135,9 @@ export default function MiniCodingGame() {
             <span className="text-lg sm:text-xl">🎮</span>
             <div>
               <h3 className="text-sm sm:text-lg font-bold text-white leading-tight">
-                Quick Dev Quiz
+                {t('game.title')}
               </h3>
-              <p className="text-[10px] sm:text-[11px] text-slate-400">Guess the output / solve the snippet</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-400">{t('game.subtitle')}</p>
             </div>
           </div>
 
@@ -137,12 +146,12 @@ export default function MiniCodingGame() {
             <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg sm:rounded-xl bg-slate-900 border border-white/10 text-[11px] sm:text-xs font-mono">
               <span>🔥</span>
               <span className="font-bold text-amber-400">{streak}</span>
-              <span className="text-slate-500 text-[9px] sm:text-[10px] hidden xs:inline">streak</span>
+              <span className="text-slate-500 text-[9px] sm:text-[10px] hidden xs:inline">{t('game.streak')}</span>
             </div>
 
             {/* Score Badge */}
             <div className="flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg sm:rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] sm:text-xs font-mono font-bold text-emerald-400">
-              <span>{score} pts</span>
+              <span>{score} {t('game.pts')}</span>
             </div>
 
             {/* Rank */}
@@ -159,7 +168,7 @@ export default function MiniCodingGame() {
               {q.language}
             </span>
             <span className="text-slate-500 font-mono text-[11px]">
-              Question {currentIdx + 1} of {QUESTIONS.length}
+              {t('game.question_progress', { current: currentIdx + 1, total: QUESTIONS.length })}
             </span>
           </div>
 
@@ -219,16 +228,16 @@ export default function MiniCodingGame() {
           <div className="p-4 rounded-2xl bg-slate-900 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 animate-fade-in-up">
             <p className="text-xs text-slate-300 leading-relaxed">
               <strong className={selectedOpt === q.correctIndex ? 'text-emerald-400' : 'text-rose-400'}>
-                {selectedOpt === q.correctIndex ? 'Correct! ' : 'Incorrect. '}
+                {selectedOpt === q.correctIndex ? t('game.correct') : t('game.incorrect')}
               </strong>
-              {q.explanation}
+              {locale === 'bn' && q.explanationBn ? q.explanationBn : q.explanation}
             </p>
 
             <button
               onClick={handleNext}
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 font-bold text-xs shrink-0 flex items-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
             >
-              <span>Next Question</span>
+              <span>{t('game.next_question')}</span>
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
               </svg>

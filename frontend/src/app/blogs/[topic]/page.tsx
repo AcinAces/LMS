@@ -36,11 +36,11 @@ async function getTopicBlogs(topic: string): Promise<BlogSummary[]> {
   }
 }
 
-function estimateReadingTime(text?: string) {
-  if (!text) return '2 min read';
+function estimateReadingTime(text?: string, locale: Locale = 'bn') {
+  if (!text) return locale === 'bn' ? '২ মিনিট পড়ার সময়' : '2 min read';
   const words = text.trim().split(/\s+/).length;
   const minutes = Math.ceil(words / 200);
-  return `${minutes} min read`;
+  return `${minutes} ${locale === 'bn' ? 'মিনিট পড়ার সময়' : 'min read'}`;
 }
 
 export default async function TopicPage({ params }: { params: Promise<{ topic: string }> }) {
@@ -77,7 +77,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
           </Link>
 
           <span className="text-xs font-medium text-slate-400 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-white/5">
-            {blogs.length} {blogs.length === 1 ? 'Article' : 'Articles'} available
+            {blogs.length} {dict.blogs.articles_count_badge || 'Articles'}
           </span>
         </div>
         
@@ -87,15 +87,15 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
           
           <div className="relative z-10 space-y-2">
             <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 uppercase tracking-wider">
-              <span>Topic Curriculum</span>
+              <span>{dict.blogs.topic_curriculum || 'Topic Curriculum'}</span>
               <span>•</span>
-              <span>{allSubtopics.length} Modules</span>
+              <span>{allSubtopics.length} {dict.blogs.modules || 'Modules'}</span>
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
               {decodedTopic}
             </h1>
             <p className="text-slate-400 text-sm max-w-2xl pt-1">
-              Select a module below to access comprehensive study notes, implementation deep-dives, and code walkthroughs.
+              {dict.blogs.select_module_desc || 'Select a module below to access comprehensive study notes, implementation deep-dives, and code walkthroughs.'}
             </p>
           </div>
         </div>
@@ -127,7 +127,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
                           {subtopic}
                         </h2>
                         <span className="text-xs text-slate-400">
-                          {items.length} {items.length === 1 ? 'lesson note' : 'lesson notes'}
+                          {items.length} {dict.blogs.lesson_notes || 'lesson notes'}
                         </span>
                       </div>
                     </div>
@@ -170,7 +170,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
                             </div>
 
                             <div className="flex items-center gap-3 text-[11px] text-slate-400 pt-2">
-                              <span>{estimateReadingTime(item.body)}</span>
+                              <span>{estimateReadingTime(item.body, locale)}</span>
                               <span>•</span>
                               <span className="truncate text-emerald-400/90 font-medium">By Acin&apos;sLMS team</span>
                             </div>

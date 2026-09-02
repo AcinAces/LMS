@@ -7,7 +7,7 @@ type Dictionary = any;
 interface LanguageContextProps {
   locale: string;
   dict: Dictionary;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 const LanguageContext = createContext<LanguageContextProps | null>(null);
@@ -21,13 +21,19 @@ export const LanguageProvider = ({
   locale: string;
   dict: Dictionary;
 }) => {
-  // Simple nested key resolver (e.g., 'nav.courses')
-  const t = (key: string): string => {
+  // Simple nested key resolver (e.g., 'nav.courses') with placeholder interpolation
+  const t = (key: string, params?: Record<string, string | number>): string => {
     const keys = key.split('.');
     let value = dict;
     for (const k of keys) {
-      if (value === undefined) return key;
+      if (value === undefined || value === null) return key;
       value = value[k];
+    }
+    if (typeof value !== 'string') return key;
+    if (params) {
+      return Object.entries(params).reduce((acc, [pKey, pVal]) => {
+        return acc.replace(new RegExp(`\\{${pKey}\\}`, 'g'), String(pVal));
+      }, value);
     }
     return value || key;
   };

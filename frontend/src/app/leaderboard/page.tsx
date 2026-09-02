@@ -351,7 +351,7 @@ export default function LeaderboardPage() {
                 activeFilter === 'all' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
-              All-Round Rank
+              {t('leaderboard.all_round_rank')}
             </button>
             <button
               onClick={() => setActiveFilter('quiz')}
@@ -359,7 +359,7 @@ export default function LeaderboardPage() {
                 activeFilter === 'quiz' ? 'bg-emerald-500/20 text-emerald-300 shadow-sm' : 'text-slate-400 hover:text-emerald-300'
               }`}
             >
-              Quiz Masters
+              {t('leaderboard.quiz_masters')}
             </button>
             <button
               onClick={() => setActiveFilter('course')}
@@ -367,7 +367,7 @@ export default function LeaderboardPage() {
                 activeFilter === 'course' ? 'bg-cyan-500/20 text-cyan-300 shadow-sm' : 'text-slate-400 hover:text-cyan-300'
               }`}
             >
-              Course Finishers
+              {t('leaderboard.course_finishers')}
             </button>
             <button
               onClick={() => setActiveFilter('clean')}
@@ -375,7 +375,7 @@ export default function LeaderboardPage() {
                 activeFilter === 'clean' ? 'bg-amber-500/20 text-amber-300 shadow-sm' : 'text-slate-400 hover:text-amber-300'
               }`}
             >
-              🛡️ Zero Violations
+              {t('leaderboard.zero_violations')}
             </button>
           </div>
         </div>
@@ -388,13 +388,13 @@ export default function LeaderboardPage() {
           {loading ? (
             <div className="p-16 flex flex-col items-center justify-center gap-4">
               <div className="w-10 h-10 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin" />
-              <p className="text-xs font-mono text-slate-400">Loading top students leaderboard...</p>
+              <p className="text-xs font-mono text-slate-400">{t('leaderboard.loading_leaderboard')}</p>
             </div>
           ) : filteredStudents.length === 0 ? (
             <div className="p-16 text-center space-y-3">
               <div className="text-4xl">🔍</div>
-              <h3 className="text-base font-bold text-white">No students found</h3>
-              <p className="text-xs text-slate-400">Try adjusting your search query or filter criteria.</p>
+              <h3 className="text-base font-bold text-white">{t('leaderboard.no_students')}</h3>
+              <p className="text-xs text-slate-400">{t('leaderboard.adjust_search')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -474,7 +474,7 @@ export default function LeaderboardPage() {
                                 <span>{student.username}</span>
                                 {isCurrentUser && (
                                   <span className="text-[10px] font-mono px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                    You
+                                    {t('leaderboard.you')}
                                   </span>
                                 )}
                               </div>
@@ -491,7 +491,7 @@ export default function LeaderboardPage() {
                             <span className="text-base sm:text-lg font-black text-emerald-400">
                               {student.leaderboardPoints}
                             </span>
-                            <span className="text-[9px] font-mono text-slate-500 uppercase">Points</span>
+                            <span className="text-[9px] font-mono text-slate-500 uppercase">{t('leaderboard.pts')}</span>
                           </div>
                         </td>
 
@@ -523,7 +523,7 @@ export default function LeaderboardPage() {
                         <td className="py-4 px-4 sm:px-6 text-center">
                           {student.violations.totalViolationScore === 0 ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              🛡️ Clean
+                              {t('leaderboard.clean_shield')}
                             </span>
                           ) : (
                             <div className="inline-flex flex-col items-center">

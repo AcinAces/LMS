@@ -60,7 +60,7 @@ export default function StatCounters({ courseCount, studentCount }: { courseCoun
 
         <div className="relative z-10 mt-4 flex items-center gap-1.5 text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-          <span>Active Curricula</span>
+          <span>{t('stats.active_curricula')}</span>
         </div>
       </div>
       
@@ -86,7 +86,7 @@ export default function StatCounters({ courseCount, studentCount }: { courseCoun
 
         <div className="relative z-10 mt-4 flex items-center gap-1.5 text-xs text-cyan-400 font-semibold bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/20">
           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-          <span>Active Learners</span>
+          <span>{t('stats.active_learners')}</span>
         </div>
       </div>
     </div>

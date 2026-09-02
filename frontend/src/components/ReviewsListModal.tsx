@@ -150,7 +150,7 @@ export default function ReviewsListModal({ courseTitle, reviews, onClose }: Revi
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                  {localReviews.length} {localReviews.length === 1 ? 'Student Review' : 'Student Reviews'}
+                  {t('review.student_reviews_count', { count: localReviews.length })}
                 </span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight mt-1">{t('review.student_reviews')}</h2>
@@ -162,22 +162,22 @@ export default function ReviewsListModal({ courseTitle, reviews, onClose }: Revi
           {localReviews.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-slate-950/80 border border-white/10 rounded-2xl">
               <div className="text-center p-2 rounded-xl bg-white/5 border border-white/5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Overall Rating</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400">{t('review.overall_rating_label')}</p>
                 <div className="flex items-center justify-center gap-1 mt-0.5">
                   <span className="text-xl font-black text-amber-400">{metrics.overall}</span>
                   <span className="text-xs text-amber-400/70">★</span>
                 </div>
               </div>
               <div className="text-center p-2 rounded-xl bg-white/5 border border-white/5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Teaching</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t('review.teaching')}</p>
                 <p className="text-sm font-bold text-white mt-1">{metrics.teaching} / 5.0</p>
               </div>
               <div className="text-center p-2 rounded-xl bg-white/5 border border-white/5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Content</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t('review.content')}</p>
                 <p className="text-sm font-bold text-white mt-1">{metrics.content} / 5.0</p>
               </div>
               <div className="text-center p-2 rounded-xl bg-white/5 border border-white/5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Difficulty</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t('review.difficulty')}</p>
                 <p className="text-sm font-bold text-white mt-1">{metrics.difficulty} / 5.0</p>
               </div>
             </div>
