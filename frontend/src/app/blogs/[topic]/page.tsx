@@ -36,7 +36,7 @@ async function getTopicBlogs(topic: string): Promise<BlogSummary[]> {
   }
 }
 
-function estimateReadingTime(text?: string, locale: Locale = 'bn') {
+function estimateReadingTime(text?: string, locale: Locale = 'en') {
   if (!text) return locale === 'bn' ? '২ মিনিট পড়ার সময়' : '2 min read';
   const words = text.trim().split(/\s+/).length;
   const minutes = Math.ceil(words / 200);
@@ -45,7 +45,7 @@ function estimateReadingTime(text?: string, locale: Locale = 'bn') {
 
 export default async function TopicPage({ params }: { params: Promise<{ topic: string }> }) {
   const cookieStore = await cookies();
-  const locale = (cookieStore.get('NEXT_LOCALE')?.value as Locale) || 'bn';
+  const locale = (cookieStore.get('NEXT_LOCALE')?.value as Locale) || 'en';
   const dict = await getDictionary(locale);
   const resolvedParams = await params;
   const decodedTopic = decodeURIComponent(resolvedParams.topic);

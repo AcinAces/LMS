@@ -1,6 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { setLocaleCookie } from '@/app/actions/locale';
 
 type Dictionary = any;
 
@@ -21,6 +23,26 @@ export const LanguageProvider = ({
   locale: string;
   dict: Dictionary;
 }) => {
+  const router = useRouter();
+
+  // Sync with browser cache / session storage preference
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('preferred_locale') || sessionStorage.getItem('preferred_locale');
+      if (stored && (stored === 'en' || stored === 'bn') && stored !== locale) {
+        document.cookie = `NEXT_LOCALE=${stored}; path=/; max-age=31536000; SameSite=Lax`;
+        setLocaleCookie(stored).then(() => {
+          router.refresh();
+        });
+      } else if (!stored && locale) {
+        localStorage.setItem('preferred_locale', locale);
+        sessionStorage.setItem('preferred_locale', locale);
+      }
+    } catch (e) {
+      // Storage may be disabled or restricted
+    }
+  }, [locale, router]);
+
   // Simple nested key resolver (e.g., 'nav.courses') with placeholder interpolation
   const t = (key: string, params?: Record<string, string | number>): string => {
     const keys = key.split('.');

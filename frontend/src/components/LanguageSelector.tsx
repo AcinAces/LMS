@@ -34,6 +34,14 @@ export default function LanguageSelector() {
     setIsOpen(false);
     if (newLocale === locale) return;
     
+    try {
+      localStorage.setItem('preferred_locale', newLocale);
+      sessionStorage.setItem('preferred_locale', newLocale);
+      document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
+    } catch (e) {
+      // Storage might be restricted
+    }
+
     startTransition(async () => {
       await setLocaleCookie(newLocale);
       router.refresh();
