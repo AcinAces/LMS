@@ -59,8 +59,11 @@ web_modules/
 # Optional REPL history
 .node_repl_history
 
-# Output of 'npm pack'
+# Output of 'npm pack' and backups
 *.tgz
+*.tar.gz
+*.dump
+*.sql
 
 # Yarn Integrity file
 .yarn-integrity
